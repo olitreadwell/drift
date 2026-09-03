@@ -25,7 +25,7 @@
 - Trivial loop target: docs/typo/link cleanup across README + docs/content.
 
 ## Gap ledger (dedupe — READ FIRST, never re-pick)
-- `2026-09-03` trivial-fix pass (typos/links/stale commands) — outcome: see tried-repos.jsonl row.
+- `2026-09-03` trivial-fix pass (typos) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/1 — 14 doc typos in 10 files (CONTRIBUTING.md, 9 docs pages).
 
 ## Mined gaps (discovered, not yet attempted)
 - (filled during the run; see tried-repos.jsonl note)
