@@ -1,5 +1,5 @@
 # simolus3/drift context
-> refreshed 2026-09-03 | upstream default: develop @ 70db2cd555268cf7d56d2e5510407ea8c04efccf
+> refreshed 2026-09-09 | upstream default: develop @ 3cc83f6cff8b112efbb64f8bc2d4247bf16cce67
 
 ## Identity & policies
 - upstream: simolus3/drift, default branch `develop`, primary language Dart, English-first (yes — all docs/README in English).
@@ -26,6 +26,7 @@
 
 ## Gap ledger (dedupe — READ FIRST, never re-pick)
 - `2026-09-03` trivial-fix pass (typos) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/1 — 14 doc typos in 10 files (CONTRIBUTING.md, 9 docs pages).
+- `2026-09-09` trivial-fix pass (typos) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/4 — 12 doc/issue-template typo + duplicated-word fixes in 10 files.
 
 ## Mined gaps (discovered, not yet attempted)
-- (filled during the run; see tried-repos.jsonl note)
+- `2026-09-09` docs typo pass (PR #4): loosing->losing (migrations/tests), doesnt->doesn't (examples/existing_databases), implemtation->implementation (drift_testcases README), ontop->on top (guides/migrating_to_drift), Aditional/aditional->Additional/additional (2 issue templates), the-the x3 + statement-statement (4 docs pages).
