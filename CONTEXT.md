@@ -1,5 +1,5 @@
 # simolus3/drift context
-> refreshed 2026-09-09 | upstream default: develop @ 3cc83f6cff8b112efbb64f8bc2d4247bf16cce67
+> refreshed 2026-09-09 | upstream default: develop @ ccb75b71f4c2ce07eccf06d08531957efb765aa6
 
 ## Identity & policies
 - upstream: simolus3/drift, default branch `develop`, primary language Dart, English-first (yes — all docs/README in English).
@@ -27,6 +27,7 @@
 ## Gap ledger (dedupe — READ FIRST, never re-pick)
 - `2026-09-03` trivial-fix pass (typos) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/1 — 14 doc typos in 10 files (CONTRIBUTING.md, 9 docs pages).
 - `2026-09-09` trivial-fix pass (typos) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/4 — 12 doc/issue-template typo + duplicated-word fixes in 10 files.
+- `2026-09-09` trivial-fix pass (typos + broken links) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/5 — 12 meaning-preserving fixes in 8 files: `thats`->`that's`, Wikipedia Window function link encoded (was 404), legacy.electric-sql.com -> electric-sql.com, `compatiblity`, `whereever`/`unecessary`/`correclty`, `unecessary`, `Exlude`->`Exclude` x4 in 2 build configs. CI green on fork (flaky firefox OPFS web test passed on rerun, unrelated to docs-only change).
 
 ## Mined gaps (discovered, not yet attempted)
 - `2026-09-09` docs typo pass (PR #4): loosing->losing (migrations/tests), doesnt->doesn't (examples/existing_databases), implemtation->implementation (drift_testcases README), ontop->on top (guides/migrating_to_drift), Aditional/aditional->Additional/additional (2 issue templates), the-the x3 + statement-statement (4 docs pages).
