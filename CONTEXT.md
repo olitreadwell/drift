@@ -1,5 +1,5 @@
 # simolus3/drift context
-> refreshed 2026-09-09 | upstream default: develop @ ccb75b71f4c2ce07eccf06d08531957efb765aa6
+> refreshed 2026-09-23 | upstream default: develop @ 9d2330b31fe0788d9911a7d8c09fdf976b770fd2
 
 ## Identity & policies
 - upstream: simolus3/drift, default branch `develop`, primary language Dart, English-first (yes — all docs/README in English).
@@ -29,5 +29,9 @@
 - `2026-09-09` trivial-fix pass (typos) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/4 — 12 doc/issue-template typo + duplicated-word fixes in 10 files.
 - `2026-09-09` trivial-fix pass (typos + broken links) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/5 — 12 meaning-preserving fixes in 8 files: `thats`->`that's`, Wikipedia Window function link encoded (was 404), legacy.electric-sql.com -> electric-sql.com, `compatiblity`, `whereever`/`unecessary`/`correclty`, `unecessary`, `Exlude`->`Exclude` x4 in 2 build configs. CI green on fork (flaky firefox OPFS web test passed on rerun, unrelated to docs-only change).
 
-## Mined gaps (discovered, not yet attempted)
+- `2026-09-13` prior PRs #4/#5 trivial fixes landed upstream via commit 00d2f2e8b "Fix more typos" (Simon Binder, Co-authored-by: olitreadwell) — those gaps are closed; PR #1 already merged as upstream #3853.
+- `2026-09-23` fork PR #5 closed (upstream promotion simolus3/drift#3857 was closed without merging; prior fixes already merged via 00d2f2e8b).
+- `2026-09-23` trivial-fix pass (typos + duplicated words) — outcome: pr-opened https://github.com/olitreadwell/drift/pull/11 — 16 meaning-preserving fixes in 10 files (drift + sqlparser Dart doc comments + sqlparser parse-error strings): `sychronously`->synchronously, `instantating`->instantiating, `Te`->The, `a a`->a x3, `an an`->an, `to to`->to x2, `ot`->to, `and and`->and x2, and `paranthesis`->parenthesis x4 + `for for`->for in parser.dart. All verified in current upstream develop; no overlap with PRs #1/#4/#5 (already merged upstream). Non-draft fork PR, base=fork develop. Fork CI running.
+
+
 - `2026-09-09` docs typo pass (PR #4): loosing->losing (migrations/tests), doesnt->doesn't (examples/existing_databases), implemtation->implementation (drift_testcases README), ontop->on top (guides/migrating_to_drift), Aditional/aditional->Additional/additional (2 issue templates), the-the x3 + statement-statement (4 docs pages).
