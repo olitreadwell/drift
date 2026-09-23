@@ -1,6 +1,6 @@
 part of '../ast.dart';
 
-/// Base for `ORDER BY` clauses. Without drift extensions, ony [OrderBy] will be
+/// Base for `ORDER BY` clauses. Without drift extensions, only [OrderBy] will be
 /// parsed. Otherwise, [DartOrderByPlaceholder] can be parsed as well.
 abstract class OrderByBase extends AstNode {}
 

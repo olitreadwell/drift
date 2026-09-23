@@ -168,11 +168,11 @@ class InitializedSchema<DB extends CommonDatabase> {
 
 /// Options that control how schemas are compared to find mismatches.
 final class ValidationOptions {
-  /// When enabled (defaults to `false`), validate that no furhter tables,
+  /// When enabled (defaults to `false`), validate that no further tables,
   /// triggers or views apart from those expected exist.
   final bool validateDropped;
 
-  /// When enabled (defualts to `true`), validate column constraints.
+  /// When enabled (defaults to `true`), validate column constraints.
   ///
   /// When disabled, schema verification passes even without
   final bool validateColumnConstraints;
