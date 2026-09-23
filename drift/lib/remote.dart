@@ -162,7 +162,7 @@ abstract class DriftServer {
 ///
 /// Due to this problem, it is recommended to avoid [remote] altogether. If you
 /// know the dialect beforehand, you can wrap [connectToRemoteAndInitialize] in
-/// a [DatabaseConnection.delayed] to get a connection sychronously.
+/// a [DatabaseConnection.delayed] to get a connection synchronously.
 @Deprecated('Use the asynchronous `connectToRemoteAndInitialize` instead')
 DatabaseConnection remote(
   StreamChannel<Object?> channel, {

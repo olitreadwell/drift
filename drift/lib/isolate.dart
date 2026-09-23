@@ -274,7 +274,7 @@ extension ComputeWithDriftIsolate<DB extends DatabaseConnectionUser> on DB {
 /// Creates a [RunningDriftServer] and sends a [SendPort] that can be used to
 /// establish connections.
 ///
-/// Te [args] list must contain two elements. The first one is the [SendPort]
+/// The [args] list must contain two elements. The first one is the [SendPort]
 /// that [_startDriftIsolate] will use to send the new [SendPort] used to
 /// establish further connections. The second element is a [DatabaseOpener]
 /// used to open the underlying database connection.

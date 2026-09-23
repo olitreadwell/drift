@@ -1160,7 +1160,7 @@ extension Parser on ParserState {
     if (_matchOne(TokenType.on)) {
       return OnConstraint(expression: expression());
     } else if (_matchOne(TokenType.using)) {
-      _consume(TokenType.leftParen, 'Expected an opening paranthesis');
+      _consume(TokenType.leftParen, 'Expected an opening parenthesis');
 
       final columnNames = <String>[];
       do {
@@ -1171,7 +1171,7 @@ extension Parser on ParserState {
         columnNames.add((identifier as IdentifierToken).identifier);
       } while (_matchOne(TokenType.comma));
 
-      _consume(TokenType.rightParen, 'Expected an closing paranthesis');
+      _consume(TokenType.rightParen, 'Expected an closing parenthesis');
 
       return UsingConstraint(columnNames: columnNames);
     } else {
@@ -2630,7 +2630,7 @@ extension Parser on ParserState {
         TokenType.key,
         'Expected a JSON KEY constraint',
       );
-      final name = _consumeIdentifier('Expected a name for for the json key');
+      final name = _consumeIdentifier('Expected a name for the json key');
 
       return JsonKey(resolvedName, name)
         ..setSpan(first, _previous)
@@ -2873,7 +2873,7 @@ extension Parser on ParserState {
 
       _consume(
         TokenType.rightParen,
-        'Expected closing paranthesis after column names',
+        'Expected closing parenthesis after column names',
       );
     } else {
       if (!allowEmpty) {
@@ -3102,7 +3102,7 @@ final class _ExpressionParser extends ParserState {
       final selectStmt = _fullSelect() ?? _error('Expected a select statement');
       _consume(
         TokenType.rightParen,
-        'Expected closing paranthesis to finish EXISTS expression',
+        'Expected closing parenthesis to finish EXISTS expression',
       );
       return ExistsExpression(select: selectStmt)
         ..setSpan(existsToken, _previous);
