@@ -122,7 +122,7 @@ class UpdatedTablesVisitor extends ReferencedTablesVisitor {
 ///
 /// If you want to find all referenced tables, use [findReferencedTables]. If
 /// you want to find writes (including their [UpdateKind]) and referenced
-/// tables, constrct a [UpdatedTablesVisitor] manually.
+/// tables, construct a [UpdatedTablesVisitor] manually.
 /// Then, let it visit the [root] node. You can now use
 /// [UpdatedTablesVisitor.writtenTables] and
 /// [ReferencedTablesVisitor.foundTables]. This will only walk the ast once,
@@ -146,7 +146,7 @@ Set<Table> findReferencedTables(AstNode root) {
 
 /// Extension to find referenced tables prior to any analysis runs.
 extension FindReferenceAnalysis on SqlEngine {
-  /// Finds tables references from the global schema before any analyis steps
+  /// Finds tables references from the global schema before any analysis steps
   /// run.
   ///
   /// This includes tables added in `FROM` if those tables haven't been added
