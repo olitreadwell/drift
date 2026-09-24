@@ -18,7 +18,7 @@ export 'src/options.dart';
 /// Opens a pool of SQLite connection for high-performance and concurrent
 /// queries.
 ///
-/// This opens a single connnection for writes and additional [amountOfReaders]
+/// This opens a single connection for writes and additional [amountOfReaders]
 /// connections for reads.
 /// The [configureDatabase] callback can be used to run custom pragmas on the
 /// database. This method will configure the database to run in the `WAL`

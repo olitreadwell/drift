@@ -1007,7 +1007,7 @@ extension Parser on ParserState {
     return null;
   }
 
-  /// Parses an otional [AliasClause].
+  /// Parses an optional [AliasClause].
   AliasClause? _as() {
     Token? as;
     IdentifierToken id;
@@ -1045,7 +1045,7 @@ extension Parser on ParserState {
     final tableRef = _tableReferenceOrNull(allowAlias: allowAlias);
     if (tableRef != null) {
       // this is a bit hacky. If the table reference only consists of one
-      // identifer and it's followed by a (, it's a table-valued function
+      // identifier and it's followed by a (, it's a table-valued function
       if (tableRef.as == null && _matchOne(TokenType.leftParen)) {
         final params = _functionParameters();
         _consume(TokenType.rightParen, 'Expected closing parenthesis');
@@ -1886,7 +1886,7 @@ extension Parser on ParserState {
       return false;
     }
 
-    // Table options can be seperated by comma, but they're not required either.
+    // Table options can be separated by comma, but they're not required either.
     if (tableOptions()) {
       while (_matchOne(TokenType.comma)) {
         if (!tableOptions()) {
