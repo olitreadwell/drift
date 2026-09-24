@@ -73,7 +73,7 @@ with `allItemsAfter(value).watch()`.
 And as `Stream`s are a common building block in Dart, they can be consumed by most frameworks:
 
 - In Flutter, you can declaratively listen on streams with a [`StreamBuilder`](https://api.flutter.dev/flutter/widgets/StreamBuilder-class.html).
-- Riverpod can wrap streams with a [`StreamProvider`](https://riverpod.dev/docs/providers/stream_provider).
+- Riverpod can wrap streams with a [`StreamProvider`](https://riverpod.dev/docs/concepts2/providers).
   This technique is also used in the [example app](https://github.com/simolus3/drift/blob/79e696719aa5d44b5edd30eb886e1fe5443a8b8f/examples/app/lib/screens/home/state.dart#L7-L12).
 
 All drift streams will emit an up-to-date result after listening to them (so you'll receive a snapshot
