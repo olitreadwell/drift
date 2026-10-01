@@ -1,5 +1,5 @@
 # simolus3/drift context
-> refreshed 2026-09-24 | upstream default: develop @ 2a825bafe5a7ae5537b450774f77d72753d04c50
+> refreshed 2026-10-01 | upstream default: develop @ f7e4c72bd10d92b9e1a8bfb768730ca1096b1341
 
 ## Identity & policies
 - upstream: simolus3/drift, default branch `develop`, primary language Dart, English-first (yes — all docs/README in English).
@@ -22,6 +22,7 @@
 
 ## Issue-area health
 - Issue #3709 (manager string filter contains() Cyrillic) — candidate, not used for trivial pass.
+- Issue #3334 (document whether `computedField` on a reference column joins) — OPEN, label `docs`, opened 2024-11-11 by simolus3, last activity 2026-09-13. Maintainer has not answered the behaviour question; used this run as a docs-grounded pick (PR #18).
 - Trivial loop target: docs/typo/link cleanup across README + docs/content.
 
 ## Gap ledger (dedupe — READ FIRST, never re-pick)
@@ -49,3 +50,6 @@
 - `2026-09-24` repo-audit self-found gap (manager string filters LIKE wildcards): `StringFilters.contains/startsWith/endsWith` in `drift/lib/src/runtime/manager/filter.dart` build `LIKE '%value%'` without escaping `%`/`_`/the escape char, so values containing those characters are matched as SQL pattern wildcards rather than literally (e.g. `aText.contains("50%")` also matches "50 off", `startsWith("foo_")` also matches "fooabar"). Repro: standalone probe test (4 rows, expect literal-only match) FAILS before, PASSES after. Dedupe: no upstream issue/PR found for escaping LIKE wildcards in the manager filters. Fixed by escaping `\`, `%`, `_` and passing `ESCAPE '\'`; regression test added (`manager_filter_test.dart`). Branch `fix/manager-filter-escape-like-wildcards`, non-draft fork PR https://github.com/olitreadwell/drift/pull/14.
 ## Mined gaps (discovered, not yet attempted)
 - `2026-09-24` (recorded above) — status: pr-opened (#14). No further unexplored high-value gap identified this cycle; remaining open issues are large features/complex bugs already tracked above.
+
+- `2026-10-01` docs-grounded pass (loop.sh, ANY-type) — issue #3334 (OPEN, label `docs`): "Document whether using `computedField` on a reference column will join the referenced table or not". Outcome: pr-opened https://github.com/olitreadwell/drift/pull/18 — 8 added lines in `docs/content/dart_api/manager.md`: the "Filter on foreign keys" note now states the local-column rewrite requires the foreign key column and the referenced column to share the same Dart type, that a differing type (e.g. a nullable converted reference) keeps the join so a dangling foreign key no longer matches, and the Computed Fields section cross-references the same rule. Verified against current upstream develop @ f7e4c72b: `Composer.$composableBuilder` in `drift/lib/src/runtime/manager/composer.dart` elides the join only when `$joinBuilder.currentColumn is C`, so `GeneratedColumnWithTypeConverter<RowId?, int>` fails the check. Branch `docs/manager-reference-join-behaviour` off fork develop @ 6859ac50, single commit 46541d1a7 (+8/-0), non-draft, base=fork develop. Docs-only change; docs package needs Flutter, so CI Documentation job is the verification (fork CI pending at log time). Dedupe: no upstream issue/PR documents this behaviour; #3334 itself is the open docs gap.
+  - Related self-found code gap (not attempted): the same nullable-converter asymmetry means `todos.filter((f) => f.category.id(1))` keeps the join and returns no row for a dangling FK. Decided too subtle for a first PR without maintainer confirmation — logged as status: dropped(needs-maintainer-confirmation), no code changed.
