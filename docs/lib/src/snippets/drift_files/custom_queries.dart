@@ -66,7 +66,7 @@ class MyDatabase extends $MyDatabase {
       readsFrom: {todoItems, categories},
     ).watch().map((rows) {
       // we get list of rows here. We just have to turn the raw data from the
-      // row into a CategoryWithCount instnace. As we defined the Category table
+      // row into a CategoryWithCount instance. As we defined the Category table
       // earlier, drift knows how to parse a category. The only thing left to do
       // manually is extracting the amount.
       return rows

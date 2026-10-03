@@ -6,7 +6,7 @@ library;
 
 import 'package:drift/drift.dart';
 
-/// A class that can create a [GeneratedDatabase] suitable for instantating an
+/// A class that can create a [GeneratedDatabase] suitable for instantiating an
 /// older version of your app's database.
 ///
 /// The implementation of this class is generated through the `drift_dev`

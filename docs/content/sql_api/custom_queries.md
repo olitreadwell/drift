@@ -51,7 +51,7 @@ stream of results:
 Queries can have parameters in them by using the `?` or `:name` syntax. For parameters in queries,
 drift will figure out an appropriate type and include them in the generated methods. For instance,
 `'categoryById': 'SELECT * FROM categories WHERE id = :id'` will generate the method `categoryById(int id)`.
-Drift also supports additional convenience features in custom queries, like embededding Dart expressions in
+Drift also supports additional convenience features in custom queries, like embedding Dart expressions in
 SQL. For more details, see the documentation on [drift files](drift_files.md).
 
 !!! info "On table names"
