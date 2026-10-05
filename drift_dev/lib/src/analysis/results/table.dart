@@ -239,7 +239,7 @@ class VirtualTableData {
   /// In `CREATE VIRTUAL TABLE foo USING fts5`, the [module] would be `fts5`.
   final String module;
 
-  /// The argument content immmediately following the [module] in the creating
+  /// The argument content immediately following the [module] in the creating
   /// statement.
   final List<String> moduleArguments;
 
