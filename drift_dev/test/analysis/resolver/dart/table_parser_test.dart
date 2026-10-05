@@ -329,7 +329,7 @@ void main() {
     );
   });
 
-  test('reports errors around suspicous customConstraint uses', () async {
+  test('reports errors around suspicious customConstraint uses', () async {
     final uri = Uri.parse('package:a/invalid_constraints.dart');
     final file = await backend.driver.fullyAnalyze(uri);
 

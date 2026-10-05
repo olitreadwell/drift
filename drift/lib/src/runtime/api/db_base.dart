@@ -200,7 +200,7 @@ abstract class GeneratedDatabase extends DatabaseConnectionUser
   ///
   /// Note that with the recommended setup of `NativeDatabase.createInBackground`,
   /// drift will already use an isolate to run your SQL statements. Using
-  /// [computeWithDatabase] is beneficial when an an expensive work unit needs
+  /// [computeWithDatabase] is beneficial when an expensive work unit needs
   /// to use the database, or when creating the SQL statements itself is
   /// expensive.
   /// In particular, note that [computeWithDatabase] does not create a second

@@ -341,7 +341,7 @@ final class DartTopLevelSymbol implements DartCodeElement {
 /// A visitor for Dart types automatically converting their representation to a
 /// [AnnotatedDartCode].
 ///
-/// This representation allwos emitting the Dart type with relevant imports
+/// This representation allows emitting the Dart type with relevant imports
 /// managed dynamically.
 class _AddFromDartType extends UnifyingTypeVisitor<void> {
   final AnnotatedDartCodeBuilder _builder;
