@@ -143,7 +143,7 @@ class Database extends _$Database {
           .go();
 
       if (fail) {
-        throw Exception('oh no, the query misteriously failed!');
+        throw Exception('oh no, the query mysteriously failed!');
       }
 
       await delete(users).delete(user);
