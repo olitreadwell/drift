@@ -5,7 +5,7 @@ description: Using drift with an existing database
 
 ---
 
-You can use drift with a pre-propulated database that you ship with your app.
+You can use drift with a pre-populated database that you ship with your app.
 This page also describes how to export the underlying sqlite3 database used
 by drift into a file.
 

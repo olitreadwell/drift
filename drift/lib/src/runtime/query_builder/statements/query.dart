@@ -376,7 +376,7 @@ extension QueryTableExtensions<T extends Table, D>
       'When using Query.whereSamePrimaryKey, which is also called from '
       'DeleteStatement.delete and UpdateStatement.replace, the affected table'
       'must have a primary key. You can either specify a primary implicitly '
-      'by making an integer() column autoIncrement(), or by explictly '
+      'by making an integer() column autoIncrement(), or by explicitly '
       'overriding the primaryKey getter in your table class. You\'ll also '
       'have to re-run the code generation step.\n'
       'Alternatively, if you\'re using DeleteStatement.delete or '

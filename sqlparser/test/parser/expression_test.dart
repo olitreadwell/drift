@@ -210,7 +210,7 @@ final Map<String, Expression> _testCases = {
 };
 
 void main() {
-  group('expresssion test cases', () {
+  group('expression test cases', () {
     _testCases.forEach((sql, expected) {
       test(sql, () {
         final result = SqlEngine().parse(ParserEntrypoint.expression, sql);

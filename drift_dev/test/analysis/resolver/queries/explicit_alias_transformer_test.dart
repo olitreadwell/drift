@@ -49,7 +49,7 @@ void main() {
     );
   });
 
-  test('rewrites references for compount select statements', () {
+  test('rewrites references for compound select statements', () {
     checkTransformation(
       '''
     SELECT "1 + 2", "'foo'" FROM
@@ -60,7 +60,7 @@ void main() {
     );
   });
 
-  test('rewrites references for compount select statements', () {
+  test('rewrites references for compound select statements', () {
     checkTransformation(
       '''
     WITH

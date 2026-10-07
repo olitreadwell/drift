@@ -186,7 +186,7 @@ class _PendingRequest {
 
   /// We capture the current stack trace when `request` is called so that, if
   /// an exception occurs on the remote peer, we can throw exceptions with a
-  /// proper stack trace pointing torwards the causing invocation.
+  /// proper stack trace pointing towards the causing invocation.
   final StackTrace requestTrace;
 
   _PendingRequest(this.completer, this.requestTrace);
