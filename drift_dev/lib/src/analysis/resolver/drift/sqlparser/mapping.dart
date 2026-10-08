@@ -8,7 +8,7 @@ import '../../dart/helper.dart';
 import '../../shared/dart_types.dart';
 import '../element_resolver.dart';
 
-/// Converts tables and types between `drift_dev` internal reprensentation and
+/// Converts tables and types between `drift_dev` internal representation and
 /// the one used by the `sqlparser` package.
 class TypeMapping {
   final DriftAnalysisDriver driver;

@@ -424,7 +424,7 @@ class MatchExistingTypeForQuery {
   }
 
   /// Allows using a matching drift table from a result set as an argument if
-  /// the the [existingTypeForColumn] matches the table's type (either the
+  /// the [existingTypeForColumn] matches the table's type (either the
   /// existing result type or `dynamic` if it's drift-generated).
   ArgumentForQueryRowType? _verifyMatchingDriftTable(
     MatchingDriftTable match,

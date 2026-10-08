@@ -128,7 +128,7 @@ class _DriftBuildRun {
   /// well.
   Version? overriddenLanguageVersion;
 
-  /// The language version that that the generated file will have. This is the
+  /// The language version that the generated file will have. This is the
   /// version of the input library for part files and the default version of the
   /// surrounding package otherwise.
   ///

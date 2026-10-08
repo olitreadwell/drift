@@ -40,7 +40,7 @@ abstract class Column<T extends Object> extends Expression<T> {
   /// needed.
   String get name;
 
-  /// [name], but wrapped in double quotes to escape it as a a same identifier.
+  /// [name], but wrapped in double quotes to escape it as a same identifier.
   ///
   /// In the past, this getter only used to add double-quotes when that is
   /// really needed (for instance because [name] is also a reserved keyword).

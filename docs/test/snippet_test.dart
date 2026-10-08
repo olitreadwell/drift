@@ -24,7 +24,7 @@ void main() {
         1000 * (DateTime.now().millisecondsSinceEpoch ~/ 1000),
       );
 
-      // The database is currently using unix timstamps. Let's add some rows in
+      // The database is currently using unix timestamps. Let's add some rows in
       // that format:
       await db.users.insertOne(
         UsersCompanion.insert(name: 'name', createdAt: Value(time)),

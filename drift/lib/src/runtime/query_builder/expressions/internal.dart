@@ -9,7 +9,7 @@ abstract class InfixOperator<D extends Object> extends Expression<D> {
   /// The left-hand side of this expression
   Expression get left;
 
-  /// The right-hand side of this expresion
+  /// The right-hand side of this expression
   Expression get right;
 
   /// The sql operator to write

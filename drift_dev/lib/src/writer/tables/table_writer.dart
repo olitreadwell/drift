@@ -781,7 +781,7 @@ class TableWriter extends TableOrViewWriter {
   }
 
   bool _generateVerificationFor(DriftColumn column) {
-    // dont't verify custom columns, we assume that the user knows what
+    // don't verify custom columns, we assume that the user knows what
     // they're doing
     return column.typeConverter == null;
   }

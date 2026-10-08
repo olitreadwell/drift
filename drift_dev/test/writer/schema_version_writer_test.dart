@@ -77,7 +77,7 @@ void main() {
 
     // Tables that conflict with modified table names should themselves be
     // modified to prevent the conflict. We can't check for nonexistence here
-    // because the the entire point is the name conficts with an in-use table
+    // because the entire point is the name conflicts with an in-use table
     // name, so we only check for the existence of the doubly modified name.
     for (final tableName in secondaryProblemTables.map((t) => t.baseDartName)) {
       expect(output, matches(containsTableRegex(tableName, withSuffix: true)));
