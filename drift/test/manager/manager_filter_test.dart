@@ -537,6 +537,45 @@ void main() {
     );
   });
 
+  test('filter strings treat like wildcards literally', () async {
+    await db.managers.tableWithEveryColumnType.create(
+      (o) => o(aText: Value("50% now"), anIntEnum: Value(TodoStatus.open)),
+    );
+    await db.managers.tableWithEveryColumnType.create(
+      (o) => o(aText: Value("50 off"), anIntEnum: Value(TodoStatus.open)),
+    );
+    await db.managers.tableWithEveryColumnType.create(
+      (o) => o(aText: Value("foo_bar"), anIntEnum: Value(TodoStatus.open)),
+    );
+    await db.managers.tableWithEveryColumnType.create(
+      (o) => o(aText: Value("fooabar"), anIntEnum: Value(TodoStatus.open)),
+    );
+
+    expect(
+      await db.managers.tableWithEveryColumnType
+          .filter((f) => f.aText.contains('50%'))
+          .get()
+          .then((rows) => rows.map((r) => r.aText)),
+      ['50% now'],
+    );
+
+    expect(
+      await db.managers.tableWithEveryColumnType
+          .filter((f) => f.aText.startsWith('foo_'))
+          .get()
+          .then((rows) => rows.map((r) => r.aText)),
+      ['foo_bar'],
+    );
+
+    expect(
+      await db.managers.tableWithEveryColumnType
+          .filter((f) => f.aText.endsWith('_bar'))
+          .get()
+          .then((rows) => rows.map((r) => r.aText)),
+      ['foo_bar'],
+    );
+  });
+
   test('can use shorthand filter for nulls', () async {
     final row = await db.todosTable.insertReturning(
       TodosTableCompanion.insert(content: 'my test content'),
