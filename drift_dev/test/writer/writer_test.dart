@@ -144,7 +144,7 @@ CREATE VIEW a AS SELECT nullif(bar, '') FROM foo;
   );
 
   test(
-    'generates valid code for for references whose target columnis a reference column itself',
+    'generates valid code for references whose target column is a reference column itself',
     () async {
       final result = await emulateDriftBuild(
         inputs: {

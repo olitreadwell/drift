@@ -84,7 +84,7 @@ class _TableManagerWriter {
     // Including ones that access relations
     final allFieldNames = <String>[];
     for (var column in table.columns) {
-      // Only add columns that arent relations
+      // Only add columns that aren't relations
       if (_getRelationForColumn(column) == null) {
         allFieldNames.add(column.nameInDart);
       }
@@ -105,7 +105,7 @@ class _TableManagerWriter {
         if (table.id.isDefinedInDart) {
           print(
             "Duplicate orderings/filters detected for field \"${relation.computeFieldName(leaf.writer.options)}\" on table \"${table.entityInfoName}\"."
-            " Filter and orderings for this field wont be generated."
+            " Filter and orderings for this field won't be generated."
             " Use the @ReferenceName() annotation to resolve this issue."
             " See https://drift.simonbinder.eu/docs/manager/#name-clashes for more information",
           );
@@ -138,7 +138,7 @@ class _TableManagerWriter {
         print(
           "\"${relation.currentTable.baseDartName}.${relation.currentColumn.nameInSql}\" has a type of \"$currentType\""
           " and \"${relation.referencedTable.baseDartName}.${relation.referencedColumn.nameInSql}\" has a type of \"$referencedType\"."
-          " Filters, orderings and reference getters for this relation wont be generated."
+          " Filters, orderings and reference getters for this relation won't be generated."
           " The Manager API can only generate filters and orderings for relations where the types are exactly the same."
           " If you aren't using the Manager API, you can ignore this message.",
         );
@@ -287,7 +287,7 @@ class _Relation {
     this.isReverse = false,
   });
 
-  /// Returna copy of this class with the current and referenced columns swaped
+  /// Return a copy of this class with the current and referenced columns swaped
   /// this is commonly used when finding reverse references
   _Relation swaped() {
     return _Relation(

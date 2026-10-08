@@ -18,7 +18,7 @@ enum KnownSqlDialect {
 /// SQL dialect.
 ///
 /// Different database systems may support a slightly different syntax for some
-/// queries, support different types or have specifc functions not avaialable
+/// queries, support different types or have specific functions not available
 /// in others.
 ///
 /// To make drift able to generate code for each dialect, a [DriftDialect]
