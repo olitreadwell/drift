@@ -160,7 +160,7 @@ class QueryWriter {
         }
 
         if (context.isNullable) {
-          // If this structed type is nullable, it's coming from an OUTER join
+          // If this structured type is nullable, it's coming from an OUTER join
           // which means that, even if the individual components making up the
           // structure are non-nullable, they might all be null in SQL. We
           // detect this case by looking for a non-nullable column and, if it's
@@ -793,7 +793,7 @@ class _Drift3MappingCodeWriter {
         }
 
         if (context.isNullable) {
-          // If this structed type is nullable, it's coming from an OUTER join
+          // If this structured type is nullable, it's coming from an OUTER join
           // which means that, even if the individual components making up the
           // structure are non-nullable, they might all be null in SQL. We
           // detect this case by looking for a non-nullable column and, if it's
@@ -927,7 +927,7 @@ class _ExpandedDeclarationWriter {
     var index = 0;
     for (final variable in query.variables) {
       if (!variable.isArray) {
-        // Re-assign continous indices to non-array variables
+        // Re-assign continuous indices to non-array variables
         highestIndexBeforeArray = variable.index = ++index;
       }
     }

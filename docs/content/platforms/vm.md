@@ -24,7 +24,7 @@ Especially in mobile apps, this blocking nature means that the database should
 not be accessed on the UI isolate directly, as this can cause dropped frames
 or other UI issues.
 
-When using `NativeDatabase.createInBackground` instead of the raw `NativeDatbase`
+When using `NativeDatabase.createInBackground` instead of the raw `NativeDatabase`
 constructor, drift will set up a background isolate responsible for hosting the
 database:
 

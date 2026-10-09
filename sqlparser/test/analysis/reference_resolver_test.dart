@@ -368,7 +368,7 @@ SELECT row_number() OVER wnd FROM demo
     );
   });
 
-  test('warns about ambigious references', () {
+  test('warns about ambiguous references', () {
     final engine = SqlEngine()..registerTable(demoTable);
 
     final context = engine.analyze(

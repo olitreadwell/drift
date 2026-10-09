@@ -69,7 +69,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
         error: (e, s) {
           debugPrintStack(label: e.toString(), stackTrace: s);
-          return const Text('An error has occured');
+          return const Text('An error has occurred');
         },
         loading: () => const Align(
           alignment: Alignment.center,

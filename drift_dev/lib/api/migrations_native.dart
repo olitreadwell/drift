@@ -35,7 +35,7 @@ extension VerifySelf on GeneratedDatabase {
   /// generated code expects.
   ///
   /// When changing tables or other elements of your database schema, you need
-  /// to increate your [GeneratedDatabase.schemaVersion] and write a migration
+  /// to increase your [GeneratedDatabase.schemaVersion] and write a migration
   /// to transform your existing tables to the new structure.
   ///
   /// For queries, drift always assumes that your database schema matches the
