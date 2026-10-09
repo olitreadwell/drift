@@ -982,7 +982,7 @@ abstract class RootTableManager<
   /// this function was declared to return a non-nullable row, it throws an
   /// exception in that case. Use [createReturningOrNull] when performing an
   /// insert with an insert mode like [InsertMode.insertOrIgnore] or when using
-  /// a [DoUpdate] with a `where` clause clause.
+  /// a [DoUpdate] with a `where` clause.
   Future<$Dataclass> createReturning(
     Insertable<$Dataclass> Function($CreateCompanionCallback o) f, {
     InsertMode? mode,

@@ -81,7 +81,7 @@ class DataClassWriter {
       );
     }
 
-    _buffer.writeln('{'); // start of clas
+    _buffer.writeln('{'); // start of class
 
     // write individual fields
     for (final column in columns) {

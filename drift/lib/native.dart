@@ -81,7 +81,7 @@ class NativeDatabase extends DelegatedDatabase {
   /// SQLCipher implementations.
   ///
   /// By default, drift runs migrations defined in your database class to create
-  /// tables when the database is first opened or to alter when when your schema
+  /// tables when the database is first opened or to alter when your schema
   /// changes. This uses the `user_version` sqlite3 pragma, which is compared
   /// against the `schemaVersion` getter of the database.
   /// If you want to manage migrations independently or don't need them at all,

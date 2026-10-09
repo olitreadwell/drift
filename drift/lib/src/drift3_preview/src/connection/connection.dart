@@ -119,7 +119,7 @@ abstract interface class DriftSessionWithInternalLocks {
   Future<DriftSession> exclusive();
 }
 
-/// A handle to control transaction, expanding [DriftSession.close] to suppport
+/// A handle to control transaction, expanding [DriftSession.close] to support
 /// explicitly committing or rolling transactions back.
 abstract interface class DriftTransactionSession {
   /// Commits this transaction scope.
