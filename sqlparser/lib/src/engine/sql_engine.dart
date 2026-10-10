@@ -123,7 +123,7 @@ final class SqlEngine {
     return TokenSource(scanner);
   }
 
-  /// Tokenizes the [source] into a list list [Token]s. Each [Token] contains
+  /// Tokenizes the [source] into a list of [Token]s. Each [Token] contains
   /// information about where it appears in the [source] and a [TokenType].
   ///
   /// If an error occurs while tokenizing, e.g. because an invalid token is

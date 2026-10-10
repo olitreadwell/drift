@@ -18,7 +18,7 @@ abstract base class CreateStatement<T extends DatabaseSchemaEntity>
   /// The table, view, trigger or index to create.
   final T entity;
 
-  /// Whether the [entity] should only be created if it doesn't exist alredy.
+  /// Whether the [entity] should only be created if it doesn't exist already.
   final bool ifNotExists;
 
   /// @nodoc
