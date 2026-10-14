@@ -51,11 +51,16 @@ If there were 1000 todos, this would issue 1000 queries to fetch the category fo
     When filtering on a reference column, drift will apply the filter to the column itself instead of joining the referenced table.
     For example, `todos.filter((f) => f.category.id(1))` will filter on the `category` column on the `todos` table, instead of joining the two tables and filtering on the `id` column of the `categories` table.
 
+    This requires the reference column and the column it references to have the same Dart type.
+    When they differ, for instance when a nullable reference column uses a [type converter](../type_converters.md), drift joins the referenced table instead, so the query behaves like a regular join.
+
     <h4>How does this affect me?</h4>
 
     If you have foreign keys constraints enabled (`PRAGMA foreign_keys = ON`) this won't affect you. The database will enforce that the `id` column on the `categories` table is the same as the `category` column on the `todos` table.
 
     If you don't have foreign key constraints enabled, you should be aware that the above query will not check that the category with `id` 1 exists. It will only check that the `category` column on the `todos` table is 1.
+
+    When drift joins the referenced table, a row referencing a category that doesn't exist won't match the filter at all.
 
 
 #### Prefetching references
@@ -146,6 +151,9 @@ If you want to learn more about how to write these SQL expressions, please refer
 
 You can write expressions which reference other columns in the same table or even other tables.
 The joins will be created automatically by the manager.
+
+When an expression only refers to a reference column, such as `computedField((o) => o.category.id)`, drift reads that column from the referenced table.
+As with filters, drift can often avoid the join and read the foreign key column of the current table instead - see the note on [filtering on foreign keys](#referencing-other-tables) for when this is possible.
 
 <Snippet href="/lib/src/snippets/dart_api/manager.dart" name="referenced_annotations" />
 
