@@ -10,7 +10,7 @@ typedef OnCreate = Future<void> Function(Migrator m);
 typedef OnUpgrade = Future<void> Function(Migrator m, int from, int to);
 
 /// Signature of a function that's called before a database is marked opened by
-/// drift, but after migrations took place. This is a suitable callback to to
+/// drift, but after migrations took place. This is a suitable callback to
 /// populate initial data or issue `PRAGMA` statements that you want to use.
 typedef OnBeforeOpen = Future<void> Function(OpeningDetails details);
 
@@ -175,7 +175,7 @@ class Migrator {
 
     await database.transaction(() async {
       // We will drop the original table later, which will also delete
-      // associated triggers, indices and and views. We query sqlite_schema to
+      // associated triggers, indices and views. We query sqlite_schema to
       // re-create those later.
       // We use the legacy sqlite_master table since the _schema rename happened
       // in a very recent version (3.33.0)

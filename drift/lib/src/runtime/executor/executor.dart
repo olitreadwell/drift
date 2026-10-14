@@ -163,7 +163,7 @@ abstract class TransactionExecutor extends QueryExecutor {
   /// [beginTransaction] on it.
   bool get supportsNestedTransactions;
 
-  /// Completes the transaction. No further queries may be sent to to this
+  /// Completes the transaction. No further queries may be sent to this
   /// [QueryExecutor] after this method was called.
   ///
   /// This may be called before [ensureOpen] was awaited, implementations must
@@ -171,7 +171,7 @@ abstract class TransactionExecutor extends QueryExecutor {
   /// a no-op.
   Future<void> send();
 
-  /// Cancels this transaction. No further queries may be sent ot this
+  /// Cancels this transaction. No further queries may be sent to this
   /// [QueryExecutor] after this method was called.
   ///
   /// This may be called before [ensureOpen] was awaited, implementations must

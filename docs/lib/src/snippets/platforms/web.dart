@@ -20,7 +20,7 @@ DatabaseConnection connectOnWeb() {
 
       if (result.missingFeatures.isNotEmpty) {
         // Depending how central local persistence is to your app, you may want
-        // to show a warning to the user if only unrealiable implemetentations
+        // to show a warning to the user if only unreliable implementations
         // are available.
         print(
           'Using ${result.chosenImplementation} due to missing browser '

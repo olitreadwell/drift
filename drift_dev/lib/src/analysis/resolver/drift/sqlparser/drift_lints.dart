@@ -7,7 +7,7 @@ import '../../../results/results.dart' hide ResultColumn;
 import 'mapping.dart';
 
 /// Implements (mostly drift-specific) lints for SQL statements that aren't
-/// implementeed in `sqlparser`.
+/// implemented in `sqlparser`.
 class DriftSqlLinter {
   final AnalysisContext _context;
   final bool _contextRootIsQuery;

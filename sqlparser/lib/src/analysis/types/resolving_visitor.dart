@@ -271,7 +271,7 @@ class TypeResolver extends RecursiveVisitor<TypeExpectation, void> {
 
   @override
   void visitColumnDefinition(ColumnDefinition e, TypeExpectation arg) {
-    // If we're analyzing a `CREATE TABLE` statement, we might know this colum's
+    // If we're analyzing a `CREATE TABLE` statement, we might know this column's
     // type.
     final createTable = e.parent;
     if (createTable is CreateTableStatement) {

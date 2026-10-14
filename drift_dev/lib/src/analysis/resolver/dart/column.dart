@@ -462,7 +462,7 @@ class ColumnParser {
                 element,
                 remainingExpr.methodName,
                 "You've already set custom constraints on this column, "
-                'they will be overriden by this call.',
+                'they will be overridden by this call.',
               ),
             );
           }

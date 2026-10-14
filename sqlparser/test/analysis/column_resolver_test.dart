@@ -139,7 +139,7 @@ END;
     expect(columnReference.resolvedColumn, isA<AvailableColumn>());
   });
 
-  test("DO UPDATE action in upsert can refer to 'exluded'", () {
+  test("DO UPDATE action in upsert can refer to 'excluded'", () {
     final context = engine.analyze('''
 INSERT INTO demo VALUES (?, ?)
   ON CONFLICT (id) DO UPDATE SET
@@ -287,7 +287,7 @@ INSERT INTO demo VALUES (?, ?)
     });
   });
 
-  test('reports error when using star wihout tables', () {
+  test('reports error when using star without tables', () {
     final result = engine.analyze('SELECT 1, 2, *;');
 
     expect(result.errors, hasLength(1));
