@@ -167,13 +167,22 @@ extension StringFilters<T extends String> on ColumnFilters<String> {
     } else {
       column = this.column;
     }
+
+    // Escape characters that SQLite treats as pattern wildcards in `LIKE`
+    // expressions so the value is always matched literally. This includes
+    // the escape character itself.
+    final escapedValue = value
+        .replaceAll('\\', '\\\\')
+        .replaceAll('%', '\\%')
+        .replaceAll('_', '\\_');
+
     switch (type) {
       case _StringFilterTypes.contains:
-        return column.like('%$value%');
+        return column.like('%$escapedValue%', escapeChar: '\\');
       case _StringFilterTypes.startsWith:
-        return column.like('$value%');
+        return column.like('$escapedValue%', escapeChar: '\\');
       case _StringFilterTypes.endsWith:
-        return column.like('%$value');
+        return column.like('%$escapedValue', escapeChar: '\\');
     }
   }
 
