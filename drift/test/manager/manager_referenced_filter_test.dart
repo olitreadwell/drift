@@ -72,7 +72,7 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('manager - filter related with regualar id', () async {
+  test('manager - filter related with regular id', () async {
     // Filter on related table's reference id - Does not require a join
     Composer? composer;
     expect(
@@ -315,7 +315,7 @@ void main() {
     );
   });
 
-  test('manager - filter related with regualar id with references', () async {
+  test('manager - filter related with regular id with references', () async {
     // Filter on related table's reference id - Does not require a join
     Composer? composer;
     expect(

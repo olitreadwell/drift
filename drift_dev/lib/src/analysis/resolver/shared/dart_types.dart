@@ -64,7 +64,7 @@ ExistingRowClass? validateExistingClass(
       nullabilitySuffix: NullabilitySuffix.none,
     );
 
-    // If we have an instantation, search the constructor on the type because it
+    // If we have an instantiation, search the constructor on the type because it
     // will report the right parameter types if they're generic.
     ctor = instantiation.lookUpConstructor(constructor, desiredClass.library);
   } else {

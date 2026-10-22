@@ -80,7 +80,7 @@ extension TableStatements<
   RS extends GeneratedTable<Row, RS>
 >
     on TableOrViewStatements<Row, RS> {
-  /// Creates an insert statment to be used to compose an insert on the table.
+  /// Creates an insert statement to be used to compose an insert on the table.
   InsertStatement<Row, RS> insert() {
     return InsertStatement(database, resultSet);
   }
@@ -115,7 +115,7 @@ extension TableStatements<
     );
   }
 
-  /// Inserts one row into this table table, replacing an existing row if it
+  /// Inserts one row into this table, replacing an existing row if it
   /// exists already.
   ///
   /// Please note that this method is only available on recent sqlite3 versions.

@@ -26,7 +26,7 @@ class SerializedElements {
 /// By first analyzing elements and later generating code, drift's build setup
 /// is more efficient and incremental (as not everything is analyzed again if
 /// a single file changes). However, it means that we have to serialize analysis
-/// results to read them back in in a later build step.
+/// results to read them back in a later build step.
 class ElementSerializer {
   final SerializedElements _result = SerializedElements([], {}, {});
 

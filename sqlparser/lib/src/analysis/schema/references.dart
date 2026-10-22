@@ -105,7 +105,7 @@ abstract class ReferenceScope {
   /// flag can be enabled.
   ///
   /// If an empty list is returned, the reference couldn't be resolved. If the
-  /// returned list contains more than one column, the lookup is ambigious.
+  /// returned list contains more than one column, the lookup is ambiguous.
   List<Column> resolveUnqualifiedReference(
     String columnName, {
     bool allowReferenceToResultColumn = false,
@@ -169,7 +169,7 @@ mixin _HasParentScope on ReferenceScope {
 /// This is the scope most commonly used, but specific nodes may be attached to
 /// a different scope in case they have limited visibility. For instance,
 ///  - foreign key clauses are wrapped in a [SingleTableReferenceScope] because
-///    they can't see unqualified columns of the overal scope.
+///    they can't see unqualified columns of the overall scope.
 ///  - subquery expressions can see parent tables and columns, but their columns
 ///    aren't visible in the parent statement. This is implemented by wrapping
 ///    them in a [StatementScope] as well.

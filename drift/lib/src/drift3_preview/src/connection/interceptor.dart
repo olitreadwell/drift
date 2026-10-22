@@ -5,7 +5,7 @@ import 'result_set.dart';
 /// An interceptor for SQL queries.
 ///
 /// This wraps an existing [DriftSession] implemented by drift, and by default
-/// does nothing. However, specific methods can be overriden to customize the
+/// does nothing. However, specific methods can be overridden to customize the
 /// behavior of an existing database session implementation.
 ///
 /// To apply an interceptor to a session, use [ApplyInterceptor.interceptWith].

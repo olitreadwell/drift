@@ -324,7 +324,7 @@ final class DependencyAwareResolver {
 
       return InvalidReferenceResult(
         InvalidReferenceError.ambigiousElements,
-        'Ambigious reference, it could refer to any of: $description',
+        'Ambiguous reference, it could refer to any of: $description',
       );
     }
 
