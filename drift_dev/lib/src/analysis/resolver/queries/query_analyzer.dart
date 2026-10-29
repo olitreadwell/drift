@@ -947,7 +947,7 @@ class _FindElements extends RecursiveVisitor<NestedQueriesContainer?, void> {
     NestedQueriesContainer? arg,
   ) {
     if (e is NestedQueryColumn) {
-      // If the node ist a nested query, return to avoid collecting elements
+      // If the node is a nested query, return to avoid collecting elements
       // inside of it
       return;
     }

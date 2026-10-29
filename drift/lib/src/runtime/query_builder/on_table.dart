@@ -47,7 +47,7 @@ extension TableOrViewStatements<Tbl extends HasResultSet, Row>
 /// Easily-accessible methods to compose common operations or statements on
 /// tables.
 extension TableStatements<Tbl extends Table, Row> on TableInfo<Tbl, Row> {
-  /// Creates an insert statment to be used to compose an insert on the table.
+  /// Creates an insert statement to be used to compose an insert on the table.
   ///
   /// This is equivalent to calling [DatabaseConnectionUser.into] on the
   /// captured table. See that method for more information.

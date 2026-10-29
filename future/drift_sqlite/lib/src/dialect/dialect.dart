@@ -7,7 +7,7 @@ import 'package:drift3_preview/drift.dart';
 import 'compiler.dart';
 import 'types.dart' as types;
 
-/// Provdes the [sqliteAny] column builder to build columns with an `ANY` type
+/// Provides the [sqliteAny] column builder to build columns with an `ANY` type
 /// in strict tables.
 extension DriftAnyColumnBuilder on Table {
   /// Use this as a the body of a getter to declare a column that holds

@@ -58,7 +58,7 @@ final class ColumnGeneratedAs extends ColumnConstraint {
   /// The expression that this column evaluates to.
   final Expression generatedAs;
 
-  /// Wether this column is stored in the database, as opposed to being
+  /// Whether this column is stored in the database, as opposed to being
   /// `VIRTUAL` and evaluated on each read.
   final bool stored;
 

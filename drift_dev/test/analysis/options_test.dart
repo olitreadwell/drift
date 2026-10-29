@@ -158,7 +158,7 @@ dialects:
   });
 
   group('parses functions', () {
-    test('succesfully', () {
+    test('successfully', () {
       final function = KnownSqliteFunction.fromJson('text (int, boolean nUlL)');
 
       expect(function.returnType.type, BasicType.text);

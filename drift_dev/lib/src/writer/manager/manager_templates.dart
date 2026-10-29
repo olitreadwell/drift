@@ -33,7 +33,7 @@ class _ManagerCodeTemplates {
 
   /// How the database will represented in the generated code
   ///
-  /// When doing modular generation the table doesnt have direct access to the database class
+  /// When doing modular generation the table doesn't have direct access to the database class
   /// so it will use `GeneratedDatabase` as the generic type in such cases
   ///
   /// E.g. `i0.GeneratedDatabase` or `AppDatabase`
@@ -166,7 +166,7 @@ class _ManagerCodeTemplates {
       companionBuilderBody.write('$param: $param,');
 
       // When writing an update companion builder, all fields are optional
-      // they are all therefor defaulted to absent
+      // they are all therefore defaulted to absent
       if (isUpdate) {
         companionBuilderTypeDef.write('$value<$typeName> $param,');
         companionBuilderArguments.write(
@@ -401,7 +401,7 @@ class _ManagerCodeTemplates {
       """;
   }
 
-  /// Code for a annotations for a standard column (no relations or type convertions)
+  /// Code for a annotations for a standard column (no relations or type conversions)
   String standardColumnAnnotation({
     required TextEmitter leaf,
     required DriftColumn column,
@@ -462,7 +462,7 @@ class _ManagerCodeTemplates {
     }
   }
 
-  /// Code for a filter for a standard column (no relations or type convertions)
+  /// Code for a filter for a standard column (no relations or type conversions)
   String standardColumnFilters({
     required TextEmitter leaf,
     required DriftColumn column,
@@ -633,7 +633,7 @@ class _ManagerCodeTemplates {
     }
   }
 
-  // The name of the type defenition to use for the callback that creates the prefetches class
+  // The name of the type definition to use for the callback that creates the prefetches class
   String createCreatePrefetchHooksCallbackType({
     required DriftTable currentTable,
     required List<_Relation> relations,
