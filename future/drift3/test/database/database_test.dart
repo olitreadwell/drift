@@ -1,5 +1,5 @@
 import 'package:drift3_preview/drift.dart';
-import 'package:drift_postgres/src/drift3_preview/drift_postgres.dart';
+import 'package:drift_postgres/drift_postgres.dart';
 import 'package:drift_sqlite/drift_sqlite.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -162,7 +162,7 @@ void main() {
     final postgresDb = TodoDb(
       DriftConnection(
         dialect: PostgresDialect.new,
-        openConnection: () => throw UnsupportedError('stub'),
+        openConnection: (_) => throw UnsupportedError('stub'),
       ),
     );
     expect(postgresDb.$expandVar(1, 3), r'$2,$3,$4');
@@ -172,7 +172,7 @@ void main() {
     final db = TodoDb(
       DriftConnection(
         dialect: SqliteDialect.new,
-        openConnection: () async => MockSession(),
+        openConnection: (_) async => MockSession(),
       ),
     );
     MockSession();

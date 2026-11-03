@@ -44,7 +44,7 @@ Future<T> _runWithDatabase<T, DB extends GeneratedDatabase>({
     final database = connect(
       DriftConnection.withImplementation(
         dialect: SqliteDialect.new,
-        implementation: () async {
+        implementation: (_) async {
           final pool = SqliteConnectionPool.open(
             name: name,
             openConnections: () => throw StateError(
@@ -58,6 +58,9 @@ Future<T> _runWithDatabase<T, DB extends GeneratedDatabase>({
               // Don't try to re-run migrations here, the database is already
               // open.
               includePersistentSchemaVersion: false,
+              // Since we already are on a background isolate, run queries
+              // synchronously.
+              isolates: null,
             ),
             SqlitePoolUpdates(pool, enableCustomUpdates: false),
           );

@@ -1,5 +1,4 @@
 import 'package:charcode/ascii.dart';
-import 'package:drift/drift.dart' show SqlDialect;
 import 'package:drift_dev/src/analysis/dialect.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
@@ -83,8 +82,10 @@ class DriftOptions {
   final bool generateConnectConstructor;
 
   /// Generate managers to assist with common database operations.
-  @JsonKey(name: 'generate_manager', defaultValue: true)
-  final bool generateManager;
+  @JsonKey(name: 'generate_manager')
+  final bool? explicitGenerateManager;
+
+  bool get generateManager => explicitGenerateManager ?? !drift3Preview;
 
   @JsonKey(name: 'sqlite_modules', defaultValue: [])
   @Deprecated('Use effectiveModules instead')
@@ -172,7 +173,7 @@ class DriftOptions {
     this.useColumnNameAsJsonKeyWhenDefinedInMoorFile = true,
     this.useSqlColumnNameAsJsonKey = false,
     this.generateConnectConstructor = false,
-    this.generateManager = true,
+    this.explicitGenerateManager,
     this.dataClassToCompanions = true,
     this.generateMutableClasses = false,
     this.rowClassConstructorAllRequired = false,
@@ -185,7 +186,7 @@ class DriftOptions {
     this.modules = const [],
     this.sqliteAnalysisOptions,
     this.storeDateTimeValuesAsText = false,
-    this.dialect = const DialectOptions(null, [SqlDialect.sqlite], null),
+    this.dialect = const DialectOptions(null, [KnownSqlDialect.sqlite], null),
     this.caseFromDartToSql = CaseFromDartToSql.snake,
     this.preamble,
     this.writeToColumnsMixins = false,
@@ -208,7 +209,7 @@ class DriftOptions {
     required this.useColumnNameAsJsonKeyWhenDefinedInMoorFile,
     required this.useSqlColumnNameAsJsonKey,
     required this.generateConnectConstructor,
-    required this.generateManager,
+    required this.explicitGenerateManager,
     required this.dataClassToCompanions,
     required this.generateMutableClasses,
     required this.rowClassConstructorAllRequired,
@@ -254,9 +255,18 @@ class DriftOptions {
     }
 
     if (drift3Preview) {
-      void checkRemovedOption(bool value, String name) {
+      void checkRemovedOption(bool value, String name, [String? replacement]) {
         if (value) {
-          throw ArgumentError('Option $name is no longer available in drift3');
+          final text = StringBuffer(
+            'Option $name is no longer available in drift3',
+          );
+          if (replacement != null) {
+            text
+              ..write('. ')
+              ..write(replacement);
+          }
+
+          throw ArgumentError(text);
         }
       }
 
@@ -264,12 +274,25 @@ class DriftOptions {
         generateFromJsonStringConstructor,
         'write_from_json_string_constructor',
       );
-      checkRemovedOption(dialect != null, 'sql');
-      checkRemovedOption(modules.isNotEmpty, 'sqlite_modules');
-      checkRemovedOption(sqliteAnalysisOptions != null, 'sqlite');
+      checkRemovedOption(
+        dialect != null,
+        'sql',
+        'Use the dialects option instead',
+      );
+      checkRemovedOption(
+        modules.isNotEmpty,
+        'sqlite_modules',
+        'Add a sqlite entry to the dialects option, and include modules there.',
+      );
+      checkRemovedOption(
+        sqliteAnalysisOptions != null,
+        'sqlite',
+        'Add a sqlite entry to the dialects option, and include options there.',
+      );
       checkRemovedOption(
         storeDateTimeValuesAsText,
         'store_date_time_values_as_text',
+        'Add a sqlite entry to the dialects option, and include the option there.',
       );
     } else {
       if (drift3Dialects.isNotEmpty && drift3Dialects != _defaultDialects) {
@@ -304,7 +327,7 @@ class DriftOptions {
     return sqliteOptions?.modules ?? modules;
   }
 
-  List<SqlDialect> get supportedDialects {
+  List<KnownSqlDialect> get supportedDialects {
     if (drift3Preview) {
       return [for (final dialect in drift3Dialects) dialect.dialect];
     }
@@ -317,7 +340,7 @@ class DriftOptions {
     } else if (singleDialect != null) {
       return [singleDialect];
     } else {
-      return const [SqlDialect.sqlite];
+      return const [KnownSqlDialect.sqlite];
     }
   }
 
@@ -350,8 +373,8 @@ class DriftOptions {
 
 @JsonSerializable()
 class DialectOptions {
-  final SqlDialect? dialect;
-  final List<SqlDialect>? dialects;
+  final KnownSqlDialect? dialect;
+  final List<KnownSqlDialect>? dialects;
   final SqliteAnalysisOptions? options;
 
   const DialectOptions(this.dialect, this.dialects, this.options);
@@ -371,8 +394,7 @@ class SqliteAnalysisOptions {
 
   final Map<String, KnownSqliteFunction> knownFunctions;
 
-  @TableFromSql()
-  final List<Table> knownTables;
+  final List<KnownTable> knownTables;
 
   const SqliteAnalysisOptions({
     this.modules = const [],
@@ -388,31 +410,30 @@ class SqliteAnalysisOptions {
   Map<String, Object?> toJson() => _$SqliteAnalysisOptionsToJson(this);
 }
 
-final class TableFromSql extends JsonConverter<Table, String> {
-  const TableFromSql();
+final class KnownTable {
+  final Table table;
+  final String sql;
 
-  @override
-  Table fromJson(String json) {
+  KnownTable.fromJson(this.sql) : table = _parse(sql);
+
+  String toJson() => sql;
+
+  static Table _parse(String sql) {
     final engine = SqlEngine(EngineOptions(version: SqliteVersion.current));
-    final result = engine.parse(ParserEntrypoint.statement, json);
+    final result = engine.parse(ParserEntrypoint.statement, sql);
     if (result.errors.isNotEmpty) {
       throw ArgumentError.value(
-        json,
+        sql,
         'Not a valid CREATE TABLE statement: ${result.errors.join('\n')}',
       );
     }
 
     final root = result.rootNode;
     if (root is! TableInducingStatement) {
-      throw ArgumentError.value(json, 'Not a valid CREATE TABLE statement');
+      throw ArgumentError.value(sql, 'Not a valid CREATE TABLE statement');
     }
 
     return SchemaFromCreateTable().read(root);
-  }
-
-  @override
-  String toJson(Table object) {
-    throw UnsupportedError('Unused');
   }
 }
 

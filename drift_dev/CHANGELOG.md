@@ -1,3 +1,17 @@
+## 2.35.2
+
+- Support `package:build` versions 5.x.
+- Escape SQL column names that would conflict with members inherited by the
+  generated table class (e.g. `text`) when deriving the Dart getter name
+  ([#2100](https://github.com/simolus3/drift/issues/2100)).
+- Managers: Don't require getters for referencing columns on custom row
+  classes when prefetching references
+  ([#3437](https://github.com/simolus3/drift/issues/3437)).
+
+## 2.35.1
+
+- Support latest version of `package:cli_util`.
+
 ## 2.35.0
 
 - Warn when a table class is annotated with `@DriftDatabase` instead of silently

@@ -201,8 +201,8 @@ abstract class TableOrViewWriter {
         final name = 'type\$${types.length}';
         emitter
           ..write('final $name = ')
-          ..write(emitter.drift3SqlType(column.sqlType))
-          ..writeln('.resolveIn(dialect);');
+          ..write(emitter.drift3PhysicalSqlType(column.sqlType, 'dialect'))
+          ..writeln(';');
         return name;
       });
       resolvedColumns[column] = (posVariable, typeVariable);
@@ -378,10 +378,9 @@ abstract class TableOrViewWriter {
     }
 
     switch (column.sqlType) {
-      case ColumnDriftType():
-        additionalParams['type'] = emitter.drift(
-          column.sqlType.builtin.toString(),
-        );
+      case ColumnDriftType(:final builtin):
+        final type = emitter.drift('DriftSqlType');
+        additionalParams['type'] = '$type.${builtin.name}';
       case ColumnCustomType(:final custom):
         additionalParams['type'] = emitter.dartCode(custom.expression);
     }

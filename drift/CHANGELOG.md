@@ -1,7 +1,20 @@
-## 2.35.1-dev
+## 2.35.3
+
+- Native: Make select statements faster by not converting each result row to a map and back.
+- Make select statements faster by not creating a new map for each result row. The maps in `QueryRow.data` and from `QueryExecutor.runSelect` are now read-only.
+- Managers: Fix prefetching references to tables with custom row classes that
+  don't have getters for the referencing column (#3437).
+- Add named factories to `UpsertClause`.
+
+## 2.35.2
+
+- Web: Fix OPFS file systems not supporting nested transactions (a regression introduced in version 2.34.3).
+
+## 2.35.1
 
 - Web: Properly release transactions held by closing tabs.
 - Web: Fix writes made in transactions or through `RETURNING` statements not being persisted to IndexedDB (#3864).
+- Fix stream queries being updated when a nested transaction completes instead of after the outermost transaction, which could make them miss writes with `MultiExecutor` (#3867).
 
 ## 2.35.0
 

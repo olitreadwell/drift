@@ -1,6 +1,6 @@
 name: drift_sqlite
 description: SQLite dialect for drift.
-version: 0.1.0-alpha.0
+version: 0.1.0-alpha.3
 repository: https://github.com/simolus3/drift
 homepage: https://drift.simonbinder.eu/
 issue_tracker: https://github.com/simolus3/drift/issues
@@ -10,12 +10,12 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  drift: ^2.35.0
-  drift3_preview: ^3.0.0-alpha.0
+  drift: ^2.35.3
+  drift3_preview: ^3.0.0-alpha.1
   meta: ^1.16.0
   collection: ^1.18.0
   sqlite3: ^3.1.6
-  sqlite3_connection_pool: ^0.2.6
+  sqlite3_connection_pool: ^0.2.16
   sqlite3_web: ^0.9.4
   sqlparser: ^0.45.0
 
@@ -29,3 +29,5 @@ dev_dependencies:
   stream_channel: ^2.1.4
   async: ^2.13.1
   build_web_compilers: ^4.8.0
+  benchmark_harness: ^2.4.0
+  drift3_testcases: ^1.0.0

@@ -576,11 +576,13 @@ abstract class DatabaseConnectionUser {
   /// all), whereas an error in an [exclusively] block does not roll back
   /// earlier statements.
   Future<T> exclusively<T>(Future<T> Function() action) async {
-    return await resolvedEngine.doWhenOpened((executor) {
+    final resolved = resolvedEngine;
+
+    return await resolved.doWhenOpened((executor) {
       final exclusive = executor.beginExclusive();
 
       return _runConnectionZoned(
-        _ExclusiveExecutor(this, executor: exclusive),
+        _ExclusiveExecutor(resolved, executor: exclusive),
         () async {
           await exclusive.ensureOpen(attachedDatabase);
 

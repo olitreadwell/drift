@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:drift3_preview/drift.dart';
-import 'package:drift_sqlite/drift_sqlite.dart';
 import 'package:test/test.dart';
 
 import '../generated/todos.dart';
@@ -14,12 +13,7 @@ void main() {
     final events = <String>[];
     interceptor.events.stream.listen(events.add);
 
-    final database = TodoDb(
-      testInMemoryDatabase().interceptWith(
-        interceptor,
-        SqliteDialect.withOptions(),
-      ),
-    );
+    final database = TodoDb(testInMemoryDatabase().interceptWith(interceptor));
     await database.initialize();
     events.clear();
 
@@ -83,6 +77,30 @@ void main() {
 
     expect(events, ['write: update']);
   });
+
+  test('can disable intercepting inner', () async {
+    final interceptor = EmittingInterceptor();
+    final events = <String>[];
+    interceptor.events.stream.listen(events.add);
+
+    final connection = testInMemoryDatabase();
+
+    final database = TodoDb(
+      connection.interceptWith(interceptor, sticky: false),
+    );
+    await database.initialize();
+    events.clear();
+    await database.batch((batch) {
+      batch.insert(
+        database.categories,
+        CategoriesCompanion.insert(description: 'from batch'),
+      );
+    });
+    await database.categoriesQueries.select().get();
+    // batch and commit is called on inner, non-intercepted.
+    expect(events, ['begin', 'read']);
+    events.clear();
+  });
 }
 
 final class EmittingInterceptor extends QueryInterceptor {
@@ -92,9 +110,10 @@ final class EmittingInterceptor extends QueryInterceptor {
   Future<DriftSession> begin(
     DriftTransactionParent parent,
     TransactionOptions options,
+    AbortToken? abort,
   ) {
     events.add('begin');
-    return super.begin(parent, options);
+    return super.begin(parent, options, abort);
   }
 
   @override
@@ -110,7 +129,11 @@ final class EmittingInterceptor extends QueryInterceptor {
   }
 
   @override
-  Future<QueryResult> execute(DriftSession session, StatementInfo statement) {
+  Future<QueryResult> execute(
+    DriftSession session,
+    StatementInfo statement,
+    AbortToken? abort,
+  ) {
     if (statement.isReadOnly) {
       events.add('read');
     } else {
@@ -120,15 +143,16 @@ final class EmittingInterceptor extends QueryInterceptor {
       events.add('write: $writes');
     }
 
-    return super.execute(session, statement);
+    return super.execute(session, statement, abort);
   }
 
   @override
   Future<List<QueryResult>> executeBatch(
     DriftSession session,
     StatementBatch batch,
+    AbortToken? abort,
   ) {
     events.add('batched');
-    return super.executeBatch(session, batch);
+    return super.executeBatch(session, batch, abort);
   }
 }
