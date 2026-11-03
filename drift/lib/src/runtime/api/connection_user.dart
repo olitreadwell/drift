@@ -468,9 +468,9 @@ abstract class DatabaseConnectionUser {
   /// supporting nested transactions. The [requireNew] parameter can be set to
   /// instead turn this case into a runtime error.
   ///
-  /// Nested transactions are conceptionally similar to regular, top-level
+  /// Nested transactions are conceptually similar to regular, top-level
   /// transactions in the sense that their writes are not seen by users outside
-  /// of the transaction until it is commited. However, their behavior around
+  /// of the transaction until it is committed. However, their behavior around
   /// completions is different:
   ///
   /// - When a nested transaction completes, nothing is being persisted right
@@ -480,7 +480,7 @@ abstract class DatabaseConnectionUser {
   ///   written to the database.
   /// - When a nested transaction is aborted (which happens due to exceptions),
   ///   only changes in that inner transaction are reverted. The outer
-  ///   transaction can continue to run if it catched the exception thrown by
+  ///   transaction can continue to run if it caught the exception thrown by
   ///   the inner transaction when it aborted.
   ///
   /// See also:

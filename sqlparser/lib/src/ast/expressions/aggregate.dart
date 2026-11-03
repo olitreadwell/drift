@@ -206,7 +206,7 @@ enum ExcludeMode {
   /// the current row is excluded from the window frame
   currentRow,
 
-  /// The row and and its peers (rows considered to be equal to the ORDER BY
+  /// The row and its peers (rows considered to be equal to the ORDER BY
   /// clause) are excluded
   group,
 

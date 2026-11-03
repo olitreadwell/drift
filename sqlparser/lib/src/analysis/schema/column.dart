@@ -187,7 +187,7 @@ class ViewColumn extends Column with DelegatedColumn implements ColumnWithType {
 /// that weren't created with an `WITHOUT ROWID` clause.
 class RowId extends TableColumn {
   // note that such alias is always called "rowid" in the result set -
-  // "SELECT oid FROM table" yields a sinle column called "rowid"
+  // "SELECT oid FROM table" yields a single column called "rowid"
   RowId() : super('rowid', const ResolvedType(type: BasicType.int));
 
   @override

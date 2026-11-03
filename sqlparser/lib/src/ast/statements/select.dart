@@ -140,7 +140,7 @@ class ValuesSelectStatement extends BaseSelectStatement
 }
 
 abstract class ResultColumn extends AstNode {
-  /// The acutal, schema-level [Column]s that this result column expands to.
+  /// The actual, schema-level [Column]s that this result column expands to.
   ///
   /// For a [ExpressionResultColumn], this is usually a singleton list with a
   /// single [ExpressionColumn]. For star columns, the list may return more

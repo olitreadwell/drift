@@ -218,7 +218,7 @@ class Author {
     );
   });
 
-  test('does not write unecessary verification metas', () async {
+  test('does not write unnecessary verification metas', () async {
     final result = await emulateDriftBuild(
       inputs: {
         'a|lib/a.dart': '''

@@ -335,7 +335,7 @@ sealed class BaseSqlType<T> {
 @internal
 sealed class UserDefinedSqlType<T> implements BaseSqlType<T> {}
 
-/// An enumation of type mappings that are builtin to drift and `drift_dev`.
+/// An enumeration of type mappings that are builtin to drift and `drift_dev`.
 enum DriftSqlType<T extends Object> implements BaseSqlType<T> {
   /// A boolean type, represented as `0` or `1` (int) in SQL.
   bool<core.bool>(),
@@ -355,7 +355,7 @@ enum DriftSqlType<T extends Object> implements BaseSqlType<T> {
 
   /// A [DateTime] value.
   ///
-  /// Depending on the options choosen at build-time, this is either stored as
+  /// Depending on the options chosen at build-time, this is either stored as
   /// an unix timestamp (the default) or as a ISO 8601 string.
   dateTime<DateTime>(),
 

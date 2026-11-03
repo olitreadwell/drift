@@ -513,7 +513,7 @@ class JoinedSelectStatement<FirstT extends HasResultSet, FirstD>
           'This query contained the table ${table.entityName} more than '
           'once. Is this a typo? \n'
           'If you need a join that includes the same table more than once, you '
-          'need to alias() at least one table. See https://drift.simonbinder.eu/queries/joins#aliases '
+          'need to alias() at least one table. See https://drift.simonbinder.eu/dart_api/select/#aliases '
           'for an example.',
       cause: cause,
       trace: trace,

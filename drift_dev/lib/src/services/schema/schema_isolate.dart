@@ -270,7 +270,7 @@ final class SchemaIsolateException implements Exception {
     if (!isFatal) {
       desc +=
           '\nDrift will fall-back to only using results obtained through '
-          'static analysis, but restructing your code to avoid this compiler '
+          'static analysis, but restructuring your code to avoid this compiler '
           'error can help drift export more detailed schema descriptions.';
     }
 

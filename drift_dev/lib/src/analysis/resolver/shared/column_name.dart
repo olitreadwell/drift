@@ -7,7 +7,7 @@ final _leadingDigits = RegExp(r'^\d*');
 /// Selects a valid Dart name for a column in SQL.
 ///
 /// This includes:
-///  - stripping leaading numbers and characters that can't appear in a Dart
+///  - stripping leading numbers and characters that can't appear in a Dart
 ///    identifier.
 ///  - defaulting to `empty` if a column only consists of invalid names.
 ///  - changing the case of the identifier to `camelCase`.

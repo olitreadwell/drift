@@ -124,7 +124,7 @@ abstract class Table extends HasResultSet {
   /// numbers larger than 2⁵².
   /// It stores the exact same data as an [integer] column (and supports the
   /// same options), but instructs drift to generate a data class with a
-  /// [BigInt] field and a database conversion aware of large intergers.
+  /// [BigInt] field and a database conversion aware of large integers.
   ///
   /// __Note__: The use of [int64] is only necessary for apps that need to work
   /// on the web __and__ use columns that are likely to store values larger than

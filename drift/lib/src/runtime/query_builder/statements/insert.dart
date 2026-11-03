@@ -190,7 +190,7 @@ class InsertStatement<T extends Table, D> {
   /// general [insert] method with a [DoUpdate] including those columns in its
   /// [DoUpdate.target].
   ///
-  /// Liek the other [insert] methods, this returns the rowid of the last
+  /// Like the other [insert] methods, this returns the rowid of the last
   /// insert. When the insert was turned into an update due to a conflicting
   /// row, this behavior is somewhat confusing because the id of an (likely
   /// unrelated) insert is returned instead.

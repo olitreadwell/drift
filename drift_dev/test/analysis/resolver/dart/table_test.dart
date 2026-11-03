@@ -375,7 +375,7 @@ class TableWithCustomName extends Table {
     });
   });
 
-  test('reports errors around suspicous customConstraint uses', () async {
+  test('reports errors around suspicious customConstraint uses', () async {
     final result = await findTable('InvalidConstraints');
 
     expect(

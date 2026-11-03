@@ -209,7 +209,7 @@ extension type const DateTimeModifier._(Literal<String> _inner)
   /// Similar to the transformation on [DateTimeModifier.months], it may not
   /// always be possible to keep the day and month field the same for this
   /// transformation. For instance, if the original date is February 29 of a
-  /// leapyear and one year is added, the result will be in March 1 of the next
+  /// leap year and one year is added, the result will be in March 1 of the next
   /// year as there is no February 29.
   DateTimeModifier.years(int years) : this._(Literal('$years years'));
 

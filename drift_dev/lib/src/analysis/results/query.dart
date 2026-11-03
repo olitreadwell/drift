@@ -33,7 +33,7 @@ class DefinedSqlQuery extends DriftElement implements DriftQueryDeclaration {
   /// The unmodified source of the declared SQL statement forming this query.
   final String sql;
 
-  /// The overriden name of a result class that drift should generate for this
+  /// The overridden name of a result class that drift should generate for this
   /// query.
   ///
   /// When multiple queries share the same result class name, drift will verify
@@ -105,7 +105,7 @@ class RequestedQueryResultType {
 
 enum QueryMode { regular, atCreate }
 
-///A reference to a [FoundElement] occuring in the SQL query.
+///A reference to a [FoundElement] occurring in the SQL query.
 class SyntacticElementReference {
   final FoundElement referencedElement;
 

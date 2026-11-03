@@ -30,7 +30,7 @@ For instance, synchronizing changes made locally in the app could be tracked in 
 with a `CREATE TRIGGER` statement keeping a log of changes made to database tables you want to sync.
 Periodically, a background job could then post this log of changes to your backend server.
 
-Dominik Roszkowski has given a [talk at Fluttercon 2023](https://www.droidcon.com/2023/08/06/from-network-failures-to-offline-success-a-journey-of-visible-app/)
+Dominik Roszkowski has given a [talk at Fluttercon 2023](https://web.archive.org/web/20260209231348/https://www.droidcon.com/2023/08/06/from-network-failures-to-offline-success-a-journey-of-visible-app/)
 in which he shares the approach used by Visible to sync local changes to the server.
 Additional approaches are also discussed in [this issue](https://github.com/simolus3/drift/issues/136) and
 [here](https://github.com/simolus3/drift/discussions/2880).

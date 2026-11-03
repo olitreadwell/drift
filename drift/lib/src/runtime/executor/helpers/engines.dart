@@ -10,7 +10,7 @@ abstract class _BaseExecutor extends QueryExecutor {
   final Lock _lock = Lock();
 
   /// When a transaction is active in this executor and we're using statement
-  /// based transactions (`BEGIN` and `COMMIT`), statements _not_ targetting the
+  /// based transactions (`BEGIN` and `COMMIT`), statements _not_ targeting the
   /// transaction need to wait for the transaction to be completed before being
   /// sent. This is also true for databases which otherwise aren't sequential.
   int _waitingChildExecutors = 0;
@@ -401,7 +401,7 @@ class _WrappingTransactionExecutor extends _TransactionExecutor {
     }
 
     // The opened completer is never completed if `startTransaction` throws
-    // before our callback is invoked (probably becaue `BEGIN` threw an
+    // before our callback is invoked (probably because `BEGIN` threw an
     // exception). In that case, _finished will complete with that error though.
     return Future.any([
       opened.future,

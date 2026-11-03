@@ -53,14 +53,14 @@ class Composer<Database extends GeneratedDatabase, CurrentTable extends Table> {
   /// In this case we don't want `.id(5)` to remove all the join builders, because it is still needed by the `.name('Math')` filter.
   /// Therefore, we remove a single join builder.
   ///
-  /// Don't worry, when we eventualy build the the query, the duplicate join builders will be removed.
+  /// Don't worry, when we eventually build the query, the duplicate join builders will be removed.
   late final void Function(JoinBuilder) $removeJoinBuilderFromRootComposer;
 
   /// A helper method for creating composables that need
   /// the correct aliases for the column and the join builders.
   /// Every filter and ordering compasable is created using this method.
   ///
-  /// Explaination:
+  /// Explanation:
   /// ```dart
   /// db.managers.categories.filter((f) => f.todos((todoFilterComposer) => todoFilterComposer.title.equals("Math Homework")))
   /// ```
@@ -68,7 +68,7 @@ class Composer<Database extends GeneratedDatabase, CurrentTable extends Table> {
   /// However this `todoFilterComposer` class needs to create the filter using the alias name of the table,
   /// This [$composableBuilder] function utility helps us create it correctly
   ///
-  /// This function removes also joins when the arent needed
+  /// This function removes also joins when they aren't needed
   /// See [$removeJoinBuilderFromRootComposer] for more information
   T $composableBuilder<T, C extends TableColumn>({
     required C column,
@@ -103,7 +103,7 @@ class Composer<Database extends GeneratedDatabase, CurrentTable extends Table> {
   /// ```
   /// When we filter the todos, we will be creating a todos filter composer.
   /// This function is used to build that composer.
-  /// It will create he needed joins and ensure that the correct table alias name is used internaly
+  /// It will create the needed joins and ensure that the correct table alias name is used internally
   T $composerBuilder<
     T,
     CurrentColumn extends TableColumn,

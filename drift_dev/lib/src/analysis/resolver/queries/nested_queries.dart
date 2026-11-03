@@ -193,7 +193,7 @@ class _NestedQueryTransformer extends Transformer<NestedQueriesContainer> {
         e.transformChildren(this, child);
       }
 
-      // Remove nested query colums from the parent query
+      // Remove nested query columns from the parent query
       return null;
     }
     return super.visitDriftSpecificNode(e, arg);

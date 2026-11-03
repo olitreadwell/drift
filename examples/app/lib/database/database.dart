@@ -60,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
 
           // Also, the `REFERENCES` constraint was added to
           // [TodoEntries.category]. Run a table migration to rebuild all
-          // column constraints without loosing data.
+          // column constraints without losing data.
           await m.alterTable(TableMigration(schema.todoEntries));
         },
       ),

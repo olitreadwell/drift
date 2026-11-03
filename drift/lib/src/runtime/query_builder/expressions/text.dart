@@ -191,7 +191,7 @@ class _LikeOperator extends Expression<bool> {
   /// The regex-like expression to test the [target] against.
   final Expression<String> regex;
 
-  /// The optinal `ESCAPE` clause of this `LIKE` operator.
+  /// The optional `ESCAPE` clause of this `LIKE` operator.
   final Expression<String>? escape;
 
   /// The operator to use when matching. Defaults to `LIKE`.

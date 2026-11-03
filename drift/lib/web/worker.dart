@@ -24,7 +24,7 @@ import 'package:web/web.dart';
 /// Describes the topology between clients (e.g. tabs) and the drift web worker
 /// when spawned with [connectToDriftWorker].
 ///
-/// For more details on the individial modes, see the documentation on
+/// For more details on the individual modes, see the documentation on
 /// [dedicated], [shared] and [dedicatedInShared].
 enum DriftWorkerMode {
   /// Starts a new, regular web [Worker] when [connectToDriftWorker] is called.

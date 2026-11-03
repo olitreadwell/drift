@@ -145,7 +145,7 @@ import 'table_manager.dart';
 ///     return ProcessedTableManager(
 ///         manager.$state.copyWith(prefetchedData: [item]));
 ///   }
-///   /// This is similar to [_departmentTable] , but fot the listings.
+///   /// This is similar to [_departmentTable] , but for the listings.
 ///   /// This is a reverse relation, so we won't be using this to create a joined query.
 ///   /// But we will still use it to read and write into the `TypedResult` (`TypedResult` is a glorified `Map`, it's key needs to be a certain kind of class [ResultSetImplementation] with a generic, that's all `MultiTypedResultKey` does)
 ///   static MultiTypedResultKey<$ListingTable, List<ListingData>> _listingsTable(
@@ -463,7 +463,7 @@ class MultiTypedResultEntry<T> {
 /// Here is an example.
 /// Let's say we wanted to get all the groups, with their users.
 /// We would need to:
-///   1) Then run a 2nd query to get all the users who are in the groups. (Users who arent any groups will be ignored)
+///   1) Then run a 2nd query to get all the users who are in the groups. (Users who aren't any groups will be ignored)
 ///   2) Split the users into groups
 ///   3) Return these users as a `List<List<User>>` (The first list is the groups, the 2nd list is the users in the group), along with the referenced table
 ///

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 import 'utils.dart';
 
 void main() {
-  test('parses create table statements with a previous malformed inport', () {
+  test('parses create table statements with a previous malformed import', () {
     final file = parseDrift('''
 import ;
 CREATE TABLE foo (name TEXT);
