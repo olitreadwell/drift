@@ -1,6 +1,6 @@
 import 'package:drift3_preview/drift.dart';
 import 'package:drift3_preview/internal/versioned_schema.dart';
-import 'package:drift_postgres/src/drift3_preview/drift_postgres.dart';
+import 'package:drift_postgres/drift_postgres.dart';
 import 'package:drift_sqlite/drift_sqlite.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -93,6 +93,7 @@ void main() {
         '"a_real" REAL,'
         '"a_blob" BLOB,'
         '"an_int_enum" INTEGER,'
+        '"a_json_value" BLOB,'
         '"insert" TEXT'
         ');',
       );

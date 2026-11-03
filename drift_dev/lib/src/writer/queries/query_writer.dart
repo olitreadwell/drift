@@ -1,7 +1,7 @@
-import 'package:drift/drift.dart';
 import 'package:recase/recase.dart';
 import 'package:sqlparser/sqlparser.dart' hide ResultColumn;
 
+import '../../analysis/dialect.dart';
 import '../../analysis/options.dart';
 import '../../analysis/resolver/queries/explicit_alias_transformer.dart';
 import '../../analysis/resolver/queries/nested_queries.dart';
@@ -583,7 +583,7 @@ class QueryWriter {
   /// been expanded. For instance, 'SELECT * FROM t WHERE x IN ?' will be turned
   /// into 'SELECT * FROM t WHERE x IN ($expandedVar1)'.
   String _queryCode(SqlQuery query) {
-    final dialectForCode = <String, List<SqlDialect>>{};
+    final dialectForCode = <String, List<KnownSqlDialect>>{};
 
     for (final dialect in scope.options.supportedDialects) {
       final code = SqlWriter(
@@ -692,7 +692,7 @@ class _Drift3MappingCodeWriter {
 
   _Drift3MappingCodeWriter(this._writer, this.nestedQueries);
 
-  String referenceBuiltinType(DriftSqlType type) {
+  String referenceBuiltinType(BuiltinType type) {
     return _obtainedTypes.putIfAbsent(type, () {
       final variableName = 'type\$${type.name}';
       _outerSetup.writeln(
@@ -708,8 +708,8 @@ class _Drift3MappingCodeWriter {
       final variableName = 'type\$${_obtainedTypes.length}';
       _outerSetup
         ..write('final $variableName = ')
-        ..write(_emitter.drift3SqlType(type))
-        ..writeln('.resolveIn(dialect);');
+        ..write(_emitter.drift3PhysicalSqlType(type, 'dialect'))
+        ..writeln(';');
 
       return variableName;
     });

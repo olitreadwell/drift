@@ -227,6 +227,26 @@ void main() {
     );
   });
 
+  test('runSelect with duplicate column names', () async {
+    final db = NativeDatabase.memory();
+    addTearDown(db.close);
+    await db.ensureOpen(_FakeExecutorUser());
+
+    final rows = await db.runSelect('SELECT 1 AS a, 2 AS b, 3 AS a', []);
+    expect(rows, [
+      {'a': 3, 'b': 2},
+    ]);
+    expect(rows.single.keys, ['a', 'b']);
+    expect(rows.single['c'], null);
+
+    final row = rows.single;
+    expect(() => row['a'] = 0, throwsUnsupportedError);
+    expect(() => row.remove('a'), throwsUnsupportedError);
+    expect(() => row.clear(), throwsUnsupportedError);
+    expect(() => row.addAll({'c': 1}), throwsUnsupportedError);
+    expect(row, {'a': 3, 'b': 2});
+  });
+
   group('can disable migrations', () {
     Future<void> runTest(QueryExecutor executor) async {
       final db = TodoDb(executor);

@@ -7,6 +7,7 @@ import '../connection/streams/update_rules.dart';
 import '../query_builder/results.dart';
 import '../query_builder/schema/entities.dart';
 import '../query_builder/types.dart';
+import '../utils/abort.dart';
 import 'connection_user.dart';
 import 'selectable.dart';
 
@@ -87,10 +88,10 @@ final class CustomSelectStatement<T> extends BaseCustomSelectStatement<T> {
   }
 
   @override
-  Future<List<T>> get() async {
+  Future<List<T>> get({AbortToken? abort}) async {
     final session = await _db.currentSession();
 
-    final result = await session.execute(_statement);
+    final result = await session.execute(_statement, abort: abort);
     return _mapResults(result);
   }
 
@@ -100,9 +101,9 @@ final class CustomSelectStatement<T> extends BaseCustomSelectStatement<T> {
     final fetcher = QueryStreamFetcher(
       readsFrom: TableUpdateQuery.onAllTables(tables),
       key: StreamKey(query, variables),
-      fetchData: () async {
+      fetchData: (abort) async {
         final currentSession = await _db.currentSession();
-        return currentSession.execute(_statement);
+        return currentSession.execute(_statement, abort: abort);
       },
       prepare: () async => await _db.currentSession(),
     );
@@ -126,10 +127,10 @@ final class AsyncCustomSelectStatement<T> extends BaseCustomSelectStatement<T> {
   );
 
   @override
-  Future<List<T>> get() async {
+  Future<List<T>> get({AbortToken? abort}) async {
     final session = await _db.currentSession();
 
-    final result = await session.execute(_statement);
+    final result = await session.execute(_statement, abort: abort);
     final resultSet = result.resultSet!;
     final map = mapper(resultSet);
 
@@ -144,11 +145,12 @@ final class AsyncCustomSelectStatement<T> extends BaseCustomSelectStatement<T> {
       // We want this stream to be unique since the mapper might run
       // additional queries we don't know about yet.
       key: null,
-      fetchData: () async {
+      fetchData: (abort) async {
         // Spawn a read transaction since we might need multiple queries.
         return await _db.transaction(
           options: TransactionOptions(readOnly: isReadOnly),
-          get,
+          abort: abort,
+          () => get(abort: abort),
         );
       },
       prepare: () async => await _db.currentSession(),
@@ -174,18 +176,19 @@ final class CustomRow {
   final RawRow row;
   final DatabaseConnectionUser _db;
 
+  Map<String, Object?>? _data;
+
   /// Wraps a raw [row] into a [CustomRow].
   CustomRow(this.resultSet, this.row, this._db);
 
-  int _indexByName(String name) {
-    for (final (i, column) in resultSet.columnNames.indexed) {
-      if (column == name) {
-        return i;
-      }
-    }
-
-    throw ArgumentError.value(name, 'name', 'No column with that name');
-  }
+  /// Raw data in this row, by column name.
+  ///
+  /// Note that the values in this map aren't mapped to Dart yet, values are
+  /// unchanged from the database. For example, a [DateTime] would be stored as
+  /// a string or timestamp on SQLite database depending on options.
+  ///
+  /// To read a value, use any of the [read] methods.
+  Map<String, Object?> get data => _data ??= resultSet.rowAsMap(row);
 
   /// Reads an arbitrary value from the row and maps it to a fitting dart type.
   ///
@@ -215,7 +218,7 @@ final class CustomRow {
   /// use [readNullableWithType] if needed.
   @optionalTypeArgs
   T readWithType<T extends Object>(SqlType<T> type, String key) {
-    final index = _indexByName(key);
+    final index = resultSet.indexByName(key);
 
     return type.resolveIn(_db.dialect).dartValue(row[index]!);
   }
@@ -237,7 +240,7 @@ final class CustomRow {
   /// the type parameter [T].
   @optionalTypeArgs
   T? readNullableWithType<T extends Object>(SqlType<T> type, String key) {
-    final index = _indexByName(key);
+    final index = resultSet.indexByName(key);
 
     return switch (row[index]) {
       null => null,

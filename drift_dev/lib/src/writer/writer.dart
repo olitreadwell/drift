@@ -1,8 +1,8 @@
-import 'package:drift/drift.dart';
 import 'package:path/path.dart' show url;
 import 'package:recase/recase.dart';
 import 'package:sqlparser/sqlparser.dart' as sql;
 
+import '../analysis/dialect.dart';
 import '../analysis/options.dart';
 import '../analysis/results/results.dart';
 import '../utils/string_escaper.dart';
@@ -145,14 +145,21 @@ abstract class _NodeOrWriter {
     } else if (useDatabaseContainerOnModularBuilds &&
         writer.generationOptions.isModular) {
       final infoType = entityInfoType(element);
-
-      return AnnotatedDartCode.build(
-        (b) => b
-          ..addSymbol('ReadDatabaseContainer', modularSupport)
-          ..addText('($database).resultSet<')
-          ..addCode(infoType)
-          ..addText('>(${asDartLiteral(element.schemaName)})'),
-      );
+      if (writer.options.drift3Preview) {
+        return AnnotatedDartCode.build(
+          (b) => b
+            ..addCode(infoType)
+            ..addText('($database)'),
+        );
+      } else {
+        return AnnotatedDartCode.build(
+          (b) => b
+            ..addSymbol('ReadDatabaseContainer', modularSupport)
+            ..addText('($database).resultSet<')
+            ..addCode(infoType)
+            ..addText('>(${asDartLiteral(element.schemaName)})'),
+        );
+      }
     } else {
       final getterName = element.computeDbGetterName(writer.options);
       return AnnotatedDartCode.text('$database.$getterName');
@@ -212,16 +219,9 @@ abstract class _NodeOrWriter {
   }) {
     // Write something like `TypeConverter<MyFancyObject, String>`
     return AnnotatedDartCode.build((b) {
-      AnnotatedDartCode sqlDartType;
-
-      switch (converter.sqlType) {
-        case ColumnDriftType():
-          sqlDartType = AnnotatedDartCode([
-            dartTypeNames[converter.sqlType.builtin]!,
-          ]);
-        case ColumnCustomType(:final custom):
-          sqlDartType = AnnotatedDartCode.type(custom.dartType);
-      }
+      final AnnotatedDartCode sqlDartType = AnnotatedDartCode.build((b) {
+        b.addColumnType(converter.sqlType);
+      });
 
       final className = converter.alsoAppliesToJsonConversion
           ? 'JsonTypeConverter2'
@@ -284,13 +284,7 @@ abstract class _NodeOrWriter {
   /// This type does not respect type converters or arrays.
   AnnotatedDartCode innerColumnType(ColumnType type, {bool nullable = false}) {
     return AnnotatedDartCode.build((b) {
-      switch (type) {
-        case ColumnDriftType():
-          b.addTopLevel(dartTypeNames[type.builtin]!);
-        case ColumnCustomType(:final custom):
-          b.addDartType(custom.dartType);
-      }
-
+      b.addColumnType(type);
       if (nullable) {
         b.addText('?');
       }
@@ -397,6 +391,31 @@ abstract class _NodeOrWriter {
     return dartCode(_drift3SqlType(sqlType));
   }
 
+  String drift3PhysicalSqlType(ColumnType sqlType, String dialect) {
+    final getterOnTypeProvider = switch (sqlType) {
+      ColumnDriftType(:final builtin) => switch (builtin) {
+        BuiltinType.bool => 'boolType',
+        BuiltinType.string => 'textType',
+        BuiltinType.bigInt => 'int64Type',
+        BuiltinType.int => 'intType',
+        BuiltinType.dateTime => 'dateTimeType',
+        BuiltinType.blob => 'byteArrayType',
+        BuiltinType.double => 'doubleType',
+        BuiltinType.json => 'jsonType',
+        BuiltinType.any => null,
+      },
+      _ => null,
+    };
+
+    if (getterOnTypeProvider != null) {
+      // this essentially inlines what BuiltinSqlType.resolveIn does, but not
+      // going through the enum helps TFA.
+      return 'dialect.$getterOnTypeProvider';
+    }
+
+    return '${drift3SqlType(sqlType)}.resolveIn($dialect)';
+  }
+
   AnnotatedDartCode _drift3SqlType(ColumnType sqlType) {
     AnnotatedDartCode builtinType(String name) {
       return AnnotatedDartCode.importedSymbol(
@@ -406,12 +425,10 @@ abstract class _NodeOrWriter {
     }
 
     return switch (sqlType) {
-      ColumnDriftType(builtin: DriftSqlType.string) => builtinType('text'),
-      ColumnDriftType(builtin: DriftSqlType.blob) => builtinType('byteArray'),
-      ColumnDriftType(builtin: DriftSqlType.bigInt) => builtinType('int64'),
-      ColumnDriftType(builtin: DriftSqlType.any) => AnnotatedDartCode.build((
-        b,
-      ) {
+      ColumnDriftType(builtin: BuiltinType.string) => builtinType('text'),
+      ColumnDriftType(builtin: BuiltinType.blob) => builtinType('byteArray'),
+      ColumnDriftType(builtin: BuiltinType.bigInt) => builtinType('int64'),
+      ColumnDriftType(builtin: BuiltinType.any) => AnnotatedDartCode.build((b) {
         b.addText('const ');
         b.addSymbol('AnyType', AnnotatedDartCode.driftSqlitePreview);
         b.addText('()');
@@ -442,7 +459,7 @@ abstract class _NodeOrWriter {
     return buffer.toString();
   }
 
-  String sqlCode(sql.AstNode node, SqlDialect dialect) {
+  String sqlCode(sql.AstNode node, KnownSqlDialect dialect) {
     return SqlWriter(
       writer.options,
       dialect: dialect,
@@ -453,7 +470,7 @@ abstract class _NodeOrWriter {
   /// Builds a Dart expression writing the [node] into a Dart string.
   ///
   /// If the code for [node] depends on the dialect, the code returned evaluates
-  /// to a `Map<SqlDialect, String>`. Otherwise, the code is a direct string
+  /// to a `Map<KnownSqlDialect, String>`. Otherwise, the code is a direct string
   /// literal.
   ///
   /// The boolean component in the record describes whether the code will be
@@ -461,7 +478,7 @@ abstract class _NodeOrWriter {
   (String, bool) sqlByDialect(sql.AstNode node) {
     final dialects = writer.options.supportedDialects;
 
-    if (dialects case [SqlDialect.sqlite]) {
+    if (dialects case [KnownSqlDialect.sqlite]) {
       // Even if we only have a single dialect enabled, we should generate a
       // dialect-specific map if that dialect is not sqlite3. The reason is that
       // APIs in drift that aren't dialect-specific all assume sqlite3.
@@ -628,7 +645,7 @@ class TextEmitter extends _Node {
 
   void writeSql(
     sql.AstNode node, {
-    required SqlDialect dialect,
+    required KnownSqlDialect dialect,
     bool escapeForDartString = true,
   }) {
     SqlWriter(

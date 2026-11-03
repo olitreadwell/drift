@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' show DriftSqlType;
+import 'package:drift_dev/src/analysis/options.dart';
 import 'package:drift_dev/src/analysis/results/column.dart';
 import 'package:drift_dev/src/analysis/results/table.dart';
 import 'package:drift_dev/src/analysis/results/types.dart';
@@ -35,12 +35,12 @@ CREATE TABLE b (
     final b = results[1].result! as DriftTable;
     final bBar = b.columns[0];
 
-    expect(aFoo.sqlType.builtin, DriftSqlType.int);
+    expect(aFoo.sqlType.builtin, BuiltinType.int);
     expect(aFoo.nullable, isFalse);
     expect(aFoo.constraints, [isA<PrimaryKeyColumn>()]);
     expect(aFoo.customConstraints, 'PRIMARY KEY');
 
-    expect(aBar.sqlType.builtin, DriftSqlType.int);
+    expect(aBar.sqlType.builtin, BuiltinType.int);
     expect(aBar.nullable, isTrue);
     expect(aBar.constraints, [
       isA<ForeignKeyReference>()
@@ -54,7 +54,7 @@ CREATE TABLE b (
       'REFERENCES b(bar)DEFERRABLE INITIALLY DEFERRED',
     );
 
-    expect(bBar.sqlType.builtin, DriftSqlType.int);
+    expect(bBar.sqlType.builtin, BuiltinType.int);
     expect(bBar.nullable, isFalse);
     expect(bBar.constraints, isEmpty);
     expect(bBar.customConstraints, 'NOT NULL');
@@ -118,7 +118,7 @@ CREATE TABLE b (
       (c) => c.nameInSql == 'fruitIndex',
     );
 
-    expect(indexColumn.sqlType.builtin, DriftSqlType.int);
+    expect(indexColumn.sqlType.builtin, BuiltinType.int);
     expect(
       indexColumn.typeConverter,
       isA<AppliedTypeConverter>()
@@ -133,7 +133,7 @@ CREATE TABLE b (
     final withGenericIndexColumn = table.columns.singleWhere(
       (c) => c.nameInSql == 'fruitWithGenericIndex',
     );
-    expect(withGenericIndexColumn.sqlType.builtin, DriftSqlType.int);
+    expect(withGenericIndexColumn.sqlType.builtin, BuiltinType.int);
     expect(
       withGenericIndexColumn.typeConverter,
       isA<AppliedTypeConverter>()
@@ -153,7 +153,7 @@ CREATE TABLE b (
       (c) => c.nameInSql == 'fruitName',
     );
 
-    expect(nameColumn.sqlType.builtin, DriftSqlType.string);
+    expect(nameColumn.sqlType.builtin, BuiltinType.string);
     expect(
       nameColumn.typeConverter,
       isA<AppliedTypeConverter>()
@@ -350,7 +350,7 @@ CREATE TABLE foo (
 
     final table = file.analyzedElements.single as DriftTable;
     final column = table.columns.single;
-    expect(column.sqlType.builtin, DriftSqlType.bigInt);
+    expect(column.sqlType.builtin, BuiltinType.bigInt);
   });
 
   test('escapes reserved Dart keywords in column names', () async {
@@ -376,5 +376,64 @@ CREATE TABLE foo (
     // Built-in identifiers (like `mixin`) are valid identifiers and left alone.
     expect(byName['mixin']!.nameInDart, 'mixin');
     expect(byName['regular']!.nameInDart, 'regular');
+  });
+
+  test('escapes column names clashing with table class members', () async {
+    final state = await TestBackend.inTest({
+      'a|lib/a.drift': '''
+CREATE TABLE foo (
+  text TEXT,
+  table_name TEXT,
+  map INTEGER,
+  module_and_args TEXT,
+  alias TEXT
+);
+
+CREATE VIRTUAL TABLE bar USING fts5(module_and_args);
+''',
+    }, options: const DriftOptions.defaults(modules: [SqlModule.fts5]));
+
+    final file = await state.analyze('package:a/a.drift');
+    state.expectNoErrors();
+
+    final [foo, bar] = file.analyzedElements.cast<DriftTable>().toList();
+    // The generated table class extends `Table` and mixes in `TableInfo`, so
+    // columns can't use the names of their members (like the `text()` column
+    // builder) without conflicting with them.
+    expect(foo.columns.map((c) => c.nameInDart), [
+      'text\$',
+      'tableName\$',
+      'map\$',
+      // Only virtual tables have a `moduleAndArgs` getter, but the name is
+      // reserved for all tables.
+      'moduleAndArgs\$',
+      'alias',
+    ]);
+    expect(bar.columns.map((c) => c.nameInDart), ['moduleAndArgs\$']);
+  });
+
+  test('escapes column names clashing with drift3 table members', () async {
+    final state = await TestBackend.inTest({
+      'a|lib/a.drift': '''
+CREATE TABLE foo (
+  text TEXT,
+  table_name TEXT,
+  map INTEGER,
+  alias TEXT
+);
+''',
+    }, options: const DriftOptions.defaults(drift3Preview: true));
+
+    final file = await state.analyze('package:a/a.drift');
+    state.expectNoErrors();
+
+    final table = file.analyzedElements.single as DriftTable;
+    expect(table.columns.map((c) => c.nameInDart), [
+      'text\$',
+      'tableName\$',
+      // drift3 table classes have an `alias` getter, but no `map` method.
+      'map',
+      'alias\$',
+    ]);
   });
 }

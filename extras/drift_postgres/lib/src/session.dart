@@ -2,11 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
-// ignore: implementation_imports
-import 'package:drift/src/drift3_preview/drift.dart';
+import 'package:drift3_preview/drift.dart';
 import 'package:postgres/postgres.dart';
-
-import 'type.dart';
 
 abstract base class _BasePostgresSession implements DriftSession {
   final Session _session;
@@ -14,7 +11,10 @@ abstract base class _BasePostgresSession implements DriftSession {
   _BasePostgresSession(this._session);
 
   @override
-  Future<QueryResult> execute(StatementInfo statement) async {
+  Future<QueryResult> execute(
+    StatementInfo statement, {
+    AbortToken? abort,
+  }) async {
     final parameters = statement.variables.map((e) => e as TypedValue).toList();
     final result = await _session.execute(
       statement.sql,
@@ -26,7 +26,10 @@ abstract base class _BasePostgresSession implements DriftSession {
   }
 
   @override
-  Future<List<QueryResult>> executeBatch(StatementBatch batch) async {
+  Future<List<QueryResult>> executeBatch(
+    StatementBatch batch, {
+    AbortToken? abort,
+  }) async {
     final prepared = await Future.wait(batch.sql.map(_session.prepare));
 
     final results = <QueryResult>[];
@@ -113,7 +116,10 @@ final class PostgresSession extends _BasePostgresSession
   DriftTransactionParent? get transactionParent => this;
 
   @override
-  Future<DriftSession> begin(TransactionOptions options) async {
+  Future<DriftSession> begin(
+    TransactionOptions options, {
+    AbortToken? abort,
+  }) async {
     final transactionStarted = Completer<DriftSession>();
 
     _connection
@@ -252,16 +258,7 @@ final class _PostgresRow
   _PostgresRow(this._postgresRow);
 
   @override
-  Object? operator [](int index) {
-    if (_postgresRow.isSqlNull(index)) {
-      return null;
-    }
-
-    return PostgresDatabaseValue(
-      column: _postgresRow.schema.columns[index],
-      value: _postgresRow[index],
-    );
-  }
+  Object? operator [](int index) => _postgresRow[index];
 
   @override
   void operator []=(int index, Object? value) {

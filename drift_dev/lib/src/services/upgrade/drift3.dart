@@ -4,13 +4,14 @@ import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:collection/collection.dart';
-import 'package:drift/drift.dart' show SqlDialect;
 import 'package:drift_dev/src/backends/analyzer_context_backend.dart';
 import 'package:drift_dev/src/utils/string_escaper.dart';
 import 'package:logging/logging.dart';
@@ -18,6 +19,7 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+import '../../analysis/dialect.dart';
 import '../../analysis/options.dart';
 import '../../cli/project.dart';
 import 'shared.dart';
@@ -118,10 +120,14 @@ final class UpgradeToDrift3 {
       return;
     }
 
+    final requiredImports = _FindRequiredImports();
+    unitResult.unit.accept(requiredImports);
+
     final writer = _DartToDrift3Rewriter(
       contents,
       project.options,
       unitResult.libraryElement.typeSystem,
+      requiredImports,
       imports,
     );
     unitResult.unit.accept(writer);
@@ -268,6 +274,7 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
   final String originalContent;
   final StringRewriter _writer;
   final TypeSystem _typeSystem;
+  final _FindRequiredImports _requiredImports;
   final _KnownDriftImports _types;
 
   var isInTableDefinition = false;
@@ -279,6 +286,7 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
     this.originalContent,
     this.options,
     this._typeSystem,
+    this._requiredImports,
     this._types,
   ) : _writer = StringRewriter(originalContent);
 
@@ -332,20 +340,24 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
   @override
   void visitImportDirective(ImportDirective node) {
     if (node.uri.stringValue == 'package:drift/drift.dart') {
-      // Drift version 2 exports Uint8List from dart:typed_data, drift3 doesn't.
-      // Manually import that now.
       var imports = '';
 
-      if (!(libraryFragment?.importedLibraries.any(
-            (e) => e.isInSdk && e.name == 'typed_data',
-          ) ??
-          true)) {
-        imports += "import 'dart:typed_data';\n";
+      if (_requiredImports.usesUint8List) {
+        // Drift version 2 exports Uint8List from dart:typed_data, drift3
+        // doesn't. Manually import that now.
+        if (!(libraryFragment?.importedLibraries.any(
+              (e) => e.isInSdk && e.name == 'dart.typed_data',
+            ) ??
+            true)) {
+          imports += "import 'dart:typed_data';\n";
+        }
+      }
+
+      if (_requiredImports.usesSqliteSpecificApi) {
+        imports += "import 'package:drift_sqlite/drift_sqlite.dart';\n";
       }
 
       if (_writer.content.contains('@DriftDatabase')) {
-        imports += "import 'package:drift_sqlite/drift_sqlite.dart';\n";
-
         if (options.generateManager) {
           imports += "import 'package:drift_manager/drift_manager.dart';\n";
         }
@@ -387,6 +399,44 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
         }
       }
 
+      if (element.enclosingElement == _types.tableInfo &&
+          name == 'mapFromCompanion') {
+        // The second argument of mapFromCompanion is a dialect instead of a
+        // full db now.
+        _writer.replace(
+          node.argumentList.rightParenthesis.offset,
+          0,
+          '.dialect',
+        );
+        return;
+      }
+
+      if (element.enclosingElement == _types.batch &&
+          name.startsWith('insert') &&
+          node.argumentList.arguments.any(
+            (a) => a is NamedArgument && a.name.lexeme == 'onConflict',
+          ) &&
+          node.typeArguments == null) {
+        // The types for onConflict can no longer be inferred due to insert
+        // methods now requiring a generated table type instead of a plain
+        // Table.
+        final tableParameter = node.argumentList.arguments.firstWhereOrNull(
+          (a) => a.correspondingParameter?.name == 'table',
+        );
+        final replacement = _findTableTypeParameters(
+          tableParameter?.argumentExpression,
+        );
+
+        if (replacement case (final row, final table)?) {
+          _writer.insertBefore(
+            node.argumentList.leftParenthesis,
+            '<${row.getDisplayString()}, ${table.getDisplayString()}>',
+          );
+        }
+      }
+
+      // Also replace a few methods needing a separate call for SQLite-specific
+      // insert modes.
       final modeArg = node.argumentList.arguments.singleWhereOrNull(
         (e) => e is NamedArgument && e.name.lexeme == 'mode',
       );
@@ -410,13 +460,18 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
           final mode = _lexeme(modeArg.argumentExpression);
           _writer.insertBefore(node.function, 'mode($mode).');
           _writer.replaceNode(modeArg, '');
+          if (modeArg.endToken.next case final token?
+              when token.type == TokenType.COMMA) {
+            _writer.replaceNode(token, '');
+          }
+
           return;
         }
       }
 
-      if (element.readStringPragma('drift:insert-mode-replacement')
-          case final replacement?) {
-        if (modeArg != null) {
+      if (modeArg != null) {
+        if (element.readStringPragma('drift:insert-mode-replacement')
+            case final replacement?) {
           _writer.replaceNode(node.methodName, replacement);
           final mode = _lexeme(modeArg.argumentExpression);
           _writer.insertBefore(node.argumentList.arguments.first, '$mode, ');
@@ -445,6 +500,21 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
     }
 
     super.visitPropertyAccess(node);
+  }
+
+  (DartType, DartType)? _findTableTypeParameters(Expression? expression) {
+    final staticType = expression?.staticType;
+    if (staticType is! InterfaceType) return null;
+
+    final asTableInfo = staticType.asInstanceOf(_types.tableInfo);
+    if (asTableInfo == null) return null;
+
+    final table = asTableInfo.typeArguments[0];
+    final row = asTableInfo.typeArguments[1];
+
+    // The order of types is swapped in drift3, it's the row first and then the
+    // table type.
+    return (row, table);
   }
 
   /// Whether [expr] is of the form `db.executor` or `db.connection`, where
@@ -602,8 +672,7 @@ extension on DriftOptions {
       }
       if (options.knownTables.isNotEmpty) {
         serializedSqliteOptions['known_tables'] = [
-          for (final table in options.knownTables)
-            const TableFromSql().toJson(table),
+          for (final table in options.knownTables) table.toJson(),
         ];
       }
     }
@@ -611,12 +680,16 @@ extension on DriftOptions {
     return [
       for (final dialect in supportedDialects)
         switch (dialect) {
-          SqlDialect.sqlite => {
+          KnownSqlDialect.sqlite => {
             'dialect': 'sqlite',
             ...serializedSqliteOptions,
             'strict_tables_by_default': false,
             'use_binary_json_representation': false,
             'store_date_times_as_text': storeDateTimeValuesAsText,
+          },
+          KnownSqlDialect.postgres => {
+            'dialect': 'postgres',
+            'use_binary_json_representation': false,
           },
           _ => {'dialect': dialect.name},
         },
@@ -626,6 +699,10 @@ extension on DriftOptions {
 
 extension on Element {
   String? readStringPragma(String pragma) {
+    return readPragma(pragma)?.getField('options')?.toStringValue();
+  }
+
+  DartObject? readPragma(String pragma) {
     for (final annotation in metadata.annotations) {
       final value = annotation.computeConstantValue();
       if (value == null) continue;
@@ -637,7 +714,7 @@ extension on Element {
         final name = value.getField('name')!.toStringValue()!;
 
         if (name == pragma) {
-          return value.getField('options')?.toStringValue();
+          return value;
         }
       }
     }
@@ -650,6 +727,8 @@ final class _KnownDriftImports {
   final InterfaceType databaseConnectionUser;
   final InterfaceType dslTable;
   final ClassElement insertStatement;
+  final ClassElement batch;
+  final MixinElement tableInfo;
 
   _KnownDriftImports(LibraryElement drift)
     : databaseConnectionUser =
@@ -660,7 +739,10 @@ final class _KnownDriftImports {
           .thisType,
       insertStatement =
           drift.exportNamespace.definedNames2['InsertStatement']
-              as ClassElement;
+              as ClassElement,
+      batch = drift.exportNamespace.definedNames2['Batch'] as ClassElement,
+      tableInfo =
+          drift.exportNamespace.definedNames2['TableInfo'] as MixinElement;
 }
 
 extension on Expression {
@@ -676,5 +758,38 @@ extension on Expression {
     }
 
     return null;
+  }
+}
+
+final class _FindRequiredImports extends GeneralizingAstVisitor<void> {
+  var usesSqliteSpecificApi = false;
+  var usesUint8List = false;
+
+  bool _movedToDrift3(Element element) {
+    return element.readStringPragma('drift:v3-moved-to') == 'drift_sqlite';
+  }
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    usesUint8List |= node.name == 'Uint8List';
+
+    var element = node.element;
+    while (!usesSqliteSpecificApi && element != null) {
+      if (_movedToDrift3(element)) {
+        usesSqliteSpecificApi = true;
+        return;
+      }
+
+      element = element.enclosingElement;
+    }
+
+    super.visitSimpleIdentifier(node);
+  }
+
+  @override
+  void visitNamedType(NamedType node) {
+    usesUint8List |= node.name.lexeme == 'Uint8List';
+
+    super.visitNamedType(node);
   }
 }

@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:sqlite3_connection_pool/sqlite3_connection_pool.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'pool/worker.dart';
 import 'shared.dart';
 
 /// A [DriftSession] implemented over a native connection pool.
@@ -15,91 +16,114 @@ final class SqlitePoolSession
         DriftTransactionParent,
         DriftSessionWithInternalLocks {
   final SqliteConnectionPool pool;
-  final Completer<void> _closed = Completer();
+  final DatabaseWorkers? isolates;
+
+  var _outstandingLeases = 0;
+  final Completer<void> _closing = Completer();
+  final Completer<void> _lastLeaseCompleted = Completer();
 
   final bool includePersistentSchemaVersion;
-  final bool useBackgroundIsolates;
 
   SqlitePoolSession(
     this.pool, {
+    this.isolates,
     this.includePersistentSchemaVersion = true,
-    this.useBackgroundIsolates = true,
   });
 
   @override
-  Future<void> close() async {
+  Future<void> close() {
     if (!isClosed) {
-      pool.close();
-      _closed.complete();
+      _closing.complete(_closeInternal());
+    }
+
+    return closed;
+  }
+
+  @override
+  Future<void> get closed => _closing.future;
+
+  @override
+  bool get isClosed => _closing.isCompleted;
+
+  Future<void> _closeInternal() async {
+    await pool.close(abortOutstandingRequests: true);
+
+    if (_outstandingLeases > 0) {
+      await _lastLeaseCompleted.future;
+    }
+
+    // We have awaited all outstanding leases, so all isolates must be idle at
+    // this point. Close them.
+    await isolates?.close();
+  }
+
+  void _markLeaseReturned() {
+    _outstandingLeases--;
+    assert(_outstandingLeases >= 0);
+
+    if (_outstandingLeases == 0 && isClosed) {
+      _lastLeaseCompleted.complete();
     }
   }
 
-  @override
-  Future<void> get closed => _closed.future;
-
-  @override
-  bool get isClosed => _closed.isCompleted;
-
-  Future<ConnectionLease> _lease(bool writer) {
-    return (writer
-            ? pool.writer(abortSignal: cancellationSignal)
-            : pool.reader(abortSignal: cancellationSignal))
-        .poolAbortExceptionsToDrift();
-  }
-
-  @override
-  Future<QueryResult> execute(StatementInfo statement) async {
-    final connection = await _lease(!statement.isReadOnly);
-    try {
-      return await _executeOnLease(connection, statement);
-    } finally {
-      connection.returnLease();
-    }
-  }
-
-  @override
-  Future<List<QueryResult>> executeBatch(StatementBatch batch) async {
-    final writer = await _lease(true);
-    try {
-      return await _executeBatchOnLease(writer, batch);
-    } finally {
-      writer.returnLease();
-    }
-  }
-
-  Future<QueryResult> _executeOnLease(
-    AsyncConnection connection,
-    StatementInfo statement,
-  ) {
-    return _runWithDatabase(
-      connection,
-      _PoolConnectionStatements._runClosure(
-        statement.sql,
-        statement.variables,
-        statement.needsResultSet,
-      ),
-    );
-  }
-
-  Future<List<QueryResult>> _executeBatchOnLease(
-    AsyncConnection connection,
-    StatementBatch batch,
+  Future<(T, DatabaseWorker?)> _waitForConnection<T extends Object>(
+    Future<T> acquire,
+    void Function(T) release,
   ) async {
-    return _runWithDatabase(
-      connection,
-      _PoolConnectionStatements._runBatchClosure(batch),
-    );
+    if (isClosed) {
+      throw StateError('Session has been closed');
+    }
+
+    _outstandingLeases++;
+    DatabaseWorker? isolate;
+    T? acquired;
+
+    try {
+      acquired = await acquire.poolAbortExceptionsToDrift();
+      isolate = await isolates?.acquireWorker();
+      return (acquired, isolate);
+    } on Object {
+      if (acquired != null) release(acquired);
+      if (isolate != null) isolates!.returnIsolateWorker(isolate);
+      _markLeaseReturned();
+      rethrow;
+    }
   }
 
-  Future<T> _runWithDatabase<T>(
-    AsyncConnection connection,
-    T Function(PoolConnection) closure,
-  ) {
-    // This is safe because we're not closing the connection here.
-    if (useBackgroundIsolates) {
-      return connection.unsafeAccessOnIsolate(closure);
-    } else {
-      return connection.unsafeAccess(closure);
+  Future<_PlainLease> _lease(bool writer, AbortToken? abort) async {
+    final (connection, isolate) = await _waitForConnection(
+      writer
+          ? pool.writer(abortSignal: abort?.aborted)
+          : pool.reader(abortSignal: abort?.aborted),
+      (lease) => lease.returnLease(),
+    );
+
+    return _PlainLease(connection, this, connection, isolate);
+  }
+
+  @override
+  Future<QueryResult> execute(
+    StatementInfo statement, {
+    AbortToken? abort,
+  }) async {
+    final connection = await _lease(!statement.isReadOnly, abort);
+    try {
+      return await connection.execute(statement);
+    } finally {
+      connection._closeDirectly();
+    }
+  }
+
+  @override
+  Future<List<QueryResult>> executeBatch(
+    StatementBatch batch, {
+    AbortToken? abort,
+  }) async {
+    final writer = await _lease(true, abort);
+    try {
+      return await writer.executeBatch(batch);
+    } finally {
+      writer._closeDirectly();
     }
   }
 
@@ -125,21 +149,22 @@ final class SqlitePoolSession
   DriftTransactionParent? get transactionParent => this;
 
   @override
-  Future<DriftSession> begin(TransactionOptions options) async {
-    final connection = await _lease(!options.readOnly);
-
-    assert(await connection.autocommit);
-    await connection.execute('BEGIN IMMEDIATE;');
-    assert(!await connection.autocommit);
-    return _TransactionPoolConnection(this, connection);
+  Future<DriftSession> begin(
+    TransactionOptions options, {
+    AbortToken? abort,
+  }) async {
+    final connection = await _lease(!options.readOnly, abort);
+    return await connection.beginTransaction();
   }
 
   @override
-  Future<DriftSession> exclusive() async {
-    final access = await pool
-        .exclusiveAccess(abortSignal: cancellationSignal)
-        .poolAbortExceptionsToDrift();
-    return _ExclusivePoolConnection(this, access);
+  Future<DriftSession> exclusive({AbortToken? abort}) async {
+    final (access, isolate) = await _waitForConnection(
+      pool.exclusiveAccess(abortSignal: abort?.aborted),
+      (access) => access.close(),
+    );
+
+    return _ExclusivePoolConnection(this, access, isolate);
   }
 }
 
@@ -173,19 +198,40 @@ final class SqlitePoolUpdates extends StreamQueryStore {
 
 abstract class _LeasedPoolConnection implements DriftSession {
   final Completer<void> _closed = Completer();
+  final DatabaseWorker? _worker;
   final SqlitePoolSession _root;
   final AsyncConnection _connection;
 
-  _LeasedPoolConnection(this._root, this._connection);
+  _LeasedPoolConnection(this._root, this._connection, this._worker);
 
   void _returnConnection();
 
   @override
   Future<void> close() async {
     if (!isClosed) {
-      _returnConnection();
-      _closed.complete();
+      _closeDirectly();
     }
+    await closed;
+  }
+
+  void _closeDirectly() {
+    _returnConnection();
+    if (_worker case final worker?) {
+      _root.isolates!.returnIsolateWorker(worker);
+    }
+    _root._markLeaseReturned();
+    _closed.complete();
+  }
+
+  Future<T> _runWithDatabase<T>(T Function(PoolConnection) closure) {
+    // This is safe because the closure doesn't close the database.
+    return _connection.unsafeAccess((connection) {
+      if (_worker case final worker?) {
+        return worker.execute(connection, closure);
+      } else {
+        return closure(connection);
+      }
+    });
   }
 
   @override
@@ -195,13 +241,22 @@ abstract class _LeasedPoolConnection implements DriftSession {
   bool get isClosed => _closed.isCompleted;
 
   @override
-  Future<QueryResult> execute(StatementInfo statement) {
-    return _root._executeOnLease(_connection, statement);
+  Future<QueryResult> execute(StatementInfo statement, {AbortToken? abort}) {
+    return _runWithDatabase(
+      _PoolConnectionStatements._runClosure(
+        statement.sql,
+        statement.variables,
+        statement.needsResultSet,
+      ),
+    );
   }
 
   @override
-  Future<List<QueryResult>> executeBatch(StatementBatch batch) {
-    return _root._executeBatchOnLease(_connection, batch);
+  Future<List<QueryResult>> executeBatch(
+    StatementBatch batch, {
+    AbortToken? abort,
+  }) {
+    return _runWithDatabase(_PoolConnectionStatements._runBatchClosure(batch));
   }
 
   @override
@@ -220,12 +275,41 @@ abstract class _LeasedPoolConnection implements DriftSession {
   DriftTransactionParent? get transactionParent => null;
 }
 
+final class _PlainLease extends _LeasedPoolConnection {
+  final ConnectionLease _lease;
+
+  _PlainLease(this._lease, super.root, super.connection, super.worker);
+
+  @override
+  void _returnConnection() {
+    _lease.returnLease();
+  }
+
+  Future<_TransactionPoolConnection> beginTransaction() async {
+    try {
+      assert(await _connection.autocommit);
+      await _runWithDatabase(
+        _PoolConnectionStatements._executeClosure('BEGIN IMMEDIATE'),
+      );
+      assert(!await _connection.autocommit);
+    } on Object {
+      _closeDirectly();
+      rethrow;
+    }
+
+    return _TransactionPoolConnection(_root, _lease, _worker);
+  }
+}
+
 final class _TransactionPoolConnection extends _LeasedPoolConnection
     implements DriftTransactionSession {
   final ConnectionLease _lease;
 
-  _TransactionPoolConnection(SqlitePoolSession session, this._lease)
-    : super(session, _lease);
+  _TransactionPoolConnection(
+    SqlitePoolSession session,
+    this._lease,
+    DatabaseWorker? _worker,
+  ) : super(session, _lease, _worker);
 
   @override
   DriftTransactionSession? get transaction => this;
@@ -237,13 +321,15 @@ final class _TransactionPoolConnection extends _LeasedPoolConnection
 
   @override
   Future<void> commit() async {
-    await _connection.execute('COMMIT');
+    await _runWithDatabase(_PoolConnectionStatements._executeClosure('COMMIT'));
     await close();
   }
 
   @override
   Future<void> rollback() async {
-    await _connection.execute('ROLLBACK');
+    await _runWithDatabase(
+      _PoolConnectionStatements._executeClosure('ROLLBACK'),
+    );
     await close();
   }
 }
@@ -251,8 +337,11 @@ final class _TransactionPoolConnection extends _LeasedPoolConnection
 final class _ExclusivePoolConnection extends _LeasedPoolConnection {
   final ExclusivePoolAccess _access;
 
-  _ExclusivePoolConnection(SqlitePoolSession session, this._access)
-    : super(session, _access.writer);
+  _ExclusivePoolConnection(
+    SqlitePoolSession session,
+    this._access,
+    DatabaseWorker? _worker,
+  ) : super(session, _access.writer, _worker);
 
   @override
   void _returnConnection() {
@@ -315,12 +404,14 @@ extension _PoolConnectionStatements on PoolConnection {
   ) {
     return (conn) => conn.runBatch(batch);
   }
+
+  static void Function(PoolConnection) _executeClosure(String sql) {
+    return (conn) => conn.execute(sql);
+  }
 }
 
 extension<T> on Future<T> {
   Future<T> poolAbortExceptionsToDrift() {
-    return onError<PoolAbortException>(
-      (_, _) => throw const CancellationException(),
-    );
+    return onError<PoolAbortException>((_, _) => throw const AbortException());
   }
 }
