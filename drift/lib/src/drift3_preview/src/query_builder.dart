@@ -6,6 +6,7 @@ export 'query_builder/clauses/order_by.dart';
 export 'query_builder/clauses/returning.dart';
 export 'query_builder/clauses/where.dart';
 export 'query_builder/clauses/from.dart';
+export 'query_builder/clauses/limit.dart';
 
 export 'query_builder/expressions/aggregate.dart';
 export 'query_builder/expressions/algebra.dart';
@@ -39,6 +40,7 @@ export 'query_builder/statements/delete.dart';
 export 'query_builder/statements/insert.dart';
 export 'query_builder/statements/select.dart';
 export 'query_builder/statements/statement.dart';
+export 'query_builder/statements/transactions.dart';
 export 'query_builder/statements/update.dart';
 export 'query_builder/statements/query.dart';
 

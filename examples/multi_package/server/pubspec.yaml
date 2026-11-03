@@ -7,8 +7,8 @@ environment:
 
 dependencies:
   args: ^2.4.0
-  drift: ^2.15.0
-  drift_postgres: ^1.1.0
+  drift3_preview:
+  drift_postgres:
   shelf: ^1.4.0
   shelf_router: ^1.1.0
 

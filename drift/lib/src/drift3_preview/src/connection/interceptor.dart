@@ -1,4 +1,4 @@
-import '../query_builder/dialect.dart';
+import '../utils/abort.dart';
 import 'connection.dart';
 import 'connection_compat.dart';
 import 'result_set.dart';
@@ -17,16 +17,21 @@ import 'result_set.dart';
 /// documentation page: https://drift.simonbinder.eu/docs/examples/tracing/
 abstract base class QueryInterceptor {
   /// Intercept [DriftSession.execute] calls.
-  Future<QueryResult> execute(DriftSession session, StatementInfo statement) {
-    return session.execute(statement);
+  Future<QueryResult> execute(
+    DriftSession session,
+    StatementInfo statement,
+    AbortToken? abort,
+  ) {
+    return session.execute(statement, abort: abort);
   }
 
   /// Intercept [DriftSession.executeBatch] calls.
   Future<List<QueryResult>> executeBatch(
     DriftSession session,
     StatementBatch batch,
+    AbortToken? abort,
   ) {
-    return session.executeBatch(batch);
+    return session.executeBatch(batch, abort: abort);
   }
 
   /// Intercept [DriftSession.close] calls.
@@ -36,8 +41,9 @@ abstract base class QueryInterceptor {
   Future<DriftSession> begin(
     DriftTransactionParent parent,
     TransactionOptions options,
+    AbortToken? abort,
   ) {
-    return parent.begin(options);
+    return parent.begin(options, abort: abort);
   }
 
   /// Intercept [DriftTransactionSession.commit] calls.
@@ -71,8 +77,14 @@ extension ApplyInterceptor on DriftSession {
   ///
   /// This can be used to, for instance, write a custom statement logger or to
   /// retry failing statements automatically.
-  DriftSession interceptWith(QueryInterceptor interceptor) {
-    return _InterceptedSession(this, interceptor);
+  ///
+  /// When [sticky] is enabled (the default), child sessions (e.g. transactions)
+  /// are also intercepted using the interceptor.
+  DriftSession interceptWith(
+    QueryInterceptor interceptor, {
+    bool sticky = true,
+  }) {
+    return _InterceptedSession(this, interceptor, sticky);
   }
 }
 
@@ -81,24 +93,32 @@ extension ApplyInterceptorConnection on DriftConnection {
   /// Returns a [DriftConnection] that will use the same stream queries as
   /// `this`, but replaces its executor by wrapping it with the [interceptor].
   ///
+  /// When [sticky] is enabled (the default), child sessions (e.g. transactions)
+  /// are also intercepted using the interceptor.
+  ///
   /// See also: [ApplyInterceptor.interceptWith].
   DriftConnection interceptWith(
-    QueryInterceptor interceptor,
-    DriftDialect dialect,
-  ) {
-    return changeSession((old) {
-      // When intercepting an entire connection, prefer to wrap the inner
-      // session in a compat session so that e.g. calls to create transactions
-      // can be intercepted as begin / commit invocations.
-      // Since the outermost transaction is always wrapped in a compatibility
-      // session and most native session implementations don't support
-      // transactions, the interceptor would otherwise see [execute] calls to
-      // `BEGIN` instead of a transaction.
-      return DriftCompatibilitySession(
-        inner: old,
-        dialect: dialect,
-      ).interceptWith(interceptor);
-    });
+    QueryInterceptor interceptor, {
+    bool sticky = true,
+  }) {
+    return DriftConnection.withImplementation(
+      dialect: dialect,
+      implementation: (dialect) async {
+        final old = await open(dialect);
+        // When intercepting an entire connection, prefer to wrap the inner
+        // session in a compat session so that e.g. calls to create transactions
+        // can be intercepted as begin / commit invocations.
+        // Since the outermost transaction is always wrapped in a compatibility
+        // session and most native session implementations don't support
+        // transactions, the interceptor would otherwise see [execute] calls to
+        // `BEGIN` instead of a transaction.
+        final session = DriftCompatibilitySession(
+          inner: old.session,
+          dialect: dialect,
+        ).interceptWith(interceptor, sticky: sticky);
+        return OpenedDriftConnection(session, old.streamQueries);
+      },
+    );
   }
 }
 
@@ -111,8 +131,9 @@ final class _InterceptedSession
         DriftSessionWithInternalLocks {
   final DriftSession _original;
   final QueryInterceptor _interceptor;
+  final bool sticky;
 
-  _InterceptedSession(this._original, this._interceptor);
+  _InterceptedSession(this._original, this._interceptor, this.sticky);
 
   @override
   Future<void> close() => _interceptor.close(_original);
@@ -121,13 +142,16 @@ final class _InterceptedSession
   Future<void> get closed => _original.closed;
 
   @override
-  Future<QueryResult> execute(StatementInfo statement) {
-    return _interceptor.execute(_original, statement);
+  Future<QueryResult> execute(StatementInfo statement, {AbortToken? abort}) {
+    return _interceptor.execute(_original, statement, abort);
   }
 
   @override
-  Future<List<QueryResult>> executeBatch(StatementBatch batch) {
-    return _interceptor.executeBatch(_original, batch);
+  Future<List<QueryResult>> executeBatch(
+    StatementBatch batch, {
+    AbortToken? abort,
+  }) {
+    return _interceptor.executeBatch(_original, batch, abort);
   }
 
   @override
@@ -157,11 +181,17 @@ final class _InterceptedSession
   }
 
   @override
-  Future<DriftSession> begin(TransactionOptions options) async {
-    return _InterceptedSession(
-      await _interceptor.begin(_original.transactionParent!, options),
-      _interceptor,
+  Future<DriftSession> begin(
+    TransactionOptions options, {
+    AbortToken? abort,
+  }) async {
+    final inner = await _interceptor.begin(
+      _original.transactionParent!,
+      options,
+      abort,
     );
+
+    return sticky ? _InterceptedSession(inner, _interceptor, true) : inner;
   }
 
   @override
@@ -188,10 +218,9 @@ final class _InterceptedSession
   }
 
   @override
-  Future<DriftSession> exclusive() async {
-    return _InterceptedSession(
-      await _original.locks!.exclusive(),
-      _interceptor,
-    );
+  Future<DriftSession> exclusive({AbortToken? abort}) async {
+    final inner = await _original.locks!.exclusive(abort: abort);
+
+    return sticky ? _InterceptedSession(inner, _interceptor, sticky) : inner;
   }
 }

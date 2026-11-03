@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift_dev/src/analysis/options.dart';
 import 'package:drift_dev/src/analysis/results/results.dart';
 import 'package:test/test.dart';
@@ -270,7 +269,7 @@ class TestTable extends Table {
     final table = file.analyzedElements.whereType<DriftTable>().single;
     final column = table.columns.single;
 
-    expect(column.sqlType.builtin, DriftSqlType.any);
+    expect(column.sqlType.builtin, BuiltinType.any);
     switch (column.sqlType) {
       case ColumnDriftType():
         break;
@@ -528,9 +527,31 @@ class Preferences extends Table {
 
     final table = file.analyzedElements.single as DriftTable;
     expect(table.columns.map((c) => c.sqlType.builtin), [
-      DriftSqlType.string,
-      DriftSqlType.any,
+      BuiltinType.string,
+      BuiltinType.any,
     ]);
     expect(table.strict, isTrue);
+  });
+
+  test('recognizes json columns', () async {
+    final backend = await TestBackend.inTest({
+      'a|lib/main.dart': '''
+import 'package:drift3_preview/drift.dart';
+
+class Preferences extends Table {
+  TextColumn get key => text()();
+  JsonColumn get value => json().nullable();
+}
+''',
+    }, options: DriftOptions.defaults(drift3Preview: true));
+
+    final file = await backend.analyze('package:a/main.dart');
+    backend.expectNoErrors();
+
+    final table = file.analyzedElements.single as DriftTable;
+    expect(table.columns.map((c) => c.sqlType.builtin), [
+      BuiltinType.string,
+      BuiltinType.json,
+    ]);
   });
 }

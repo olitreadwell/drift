@@ -85,9 +85,9 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
         'generate_connect_constructor',
         (v) => v as bool? ?? false,
       ),
-      generateManager: $checkedConvert(
+      explicitGenerateManager: $checkedConvert(
         'generate_manager',
-        (v) => v as bool? ?? true,
+        (v) => v as bool?,
       ),
       dataClassToCompanions: $checkedConvert(
         'data_class_to_companions',
@@ -202,7 +202,7 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
         'use_column_name_as_json_key_when_defined_in_moor_file',
     'useSqlColumnNameAsJsonKey': 'use_sql_column_name_as_json_key',
     'generateConnectConstructor': 'generate_connect_constructor',
-    'generateManager': 'generate_manager',
+    'explicitGenerateManager': 'generate_manager',
     'dataClassToCompanions': 'data_class_to_companions',
     'generateMutableClasses': 'mutable_classes',
     'rowClassConstructorAllRequired': 'row_class_constructor_all_required',
@@ -242,7 +242,7 @@ Map<String, dynamic> _$DriftOptionsToJson(
       instance.useColumnNameAsJsonKeyWhenDefinedInMoorFile,
   'use_sql_column_name_as_json_key': instance.useSqlColumnNameAsJsonKey,
   'generate_connect_constructor': instance.generateConnectConstructor,
-  'generate_manager': instance.generateManager,
+  'generate_manager': instance.explicitGenerateManager,
   'sqlite_modules': instance.modules
       .map((e) => _$SqlModuleEnumMap[e]!)
       .toList(),
@@ -299,12 +299,12 @@ DialectOptions _$DialectOptionsFromJson(Map json) =>
       final val = DialectOptions(
         $checkedConvert(
           'dialect',
-          (v) => $enumDecodeNullable(_$SqlDialectEnumMap, v),
+          (v) => $enumDecodeNullable(_$KnownSqlDialectEnumMap, v),
         ),
         $checkedConvert(
           'dialects',
           (v) => (v as List<dynamic>?)
-              ?.map((e) => $enumDecode(_$SqlDialectEnumMap, e))
+              ?.map((e) => $enumDecode(_$KnownSqlDialectEnumMap, e))
               .toList(),
         ),
         $checkedConvert(
@@ -315,20 +315,21 @@ DialectOptions _$DialectOptionsFromJson(Map json) =>
       return val;
     });
 
-Map<String, dynamic> _$DialectOptionsToJson(
-  DialectOptions instance,
-) => <String, dynamic>{
-  'dialect': _$SqlDialectEnumMap[instance.dialect],
-  'dialects': instance.dialects?.map((e) => _$SqlDialectEnumMap[e]!).toList(),
-  'options': instance.options?.toJson(),
-};
+Map<String, dynamic> _$DialectOptionsToJson(DialectOptions instance) =>
+    <String, dynamic>{
+      'dialect': _$KnownSqlDialectEnumMap[instance.dialect],
+      'dialects': instance.dialects
+          ?.map((e) => _$KnownSqlDialectEnumMap[e]!)
+          .toList(),
+      'options': instance.options?.toJson(),
+    };
 
-const _$SqlDialectEnumMap = {
-  SqlDialect.sqlite: 'sqlite',
-  SqlDialect.mysql: 'mysql',
-  SqlDialect.postgres: 'postgres',
-  SqlDialect.duckdb: 'duckdb',
-  SqlDialect.mariadb: 'mariadb',
+const _$KnownSqlDialectEnumMap = {
+  KnownSqlDialect.sqlite: 'sqlite',
+  KnownSqlDialect.mysql: 'mysql',
+  KnownSqlDialect.postgres: 'postgres',
+  KnownSqlDialect.duckdb: 'duckdb',
+  KnownSqlDialect.mariadb: 'mariadb',
 };
 
 SqliteAnalysisOptions _$SqliteAnalysisOptionsFromJson(Map json) =>
@@ -376,7 +377,7 @@ SqliteAnalysisOptions _$SqliteAnalysisOptionsFromJson(Map json) =>
             'known_tables',
             (v) =>
                 (v as List<dynamic>?)
-                    ?.map((e) => const TableFromSql().fromJson(e as String))
+                    ?.map((e) => KnownTable.fromJson(e as String))
                     .toList() ??
                 const [],
           ),
@@ -400,9 +401,7 @@ Map<String, dynamic> _$SqliteAnalysisOptionsToJson(
   'known_functions': instance.knownFunctions.map(
     (k, e) => MapEntry(k, e.toJson()),
   ),
-  'known_tables': instance.knownTables
-      .map(const TableFromSql().toJson)
-      .toList(),
+  'known_tables': instance.knownTables.map((e) => e.toJson()).toList(),
 };
 
 Value? _$JsonConverterFromJson<Json, Value>(

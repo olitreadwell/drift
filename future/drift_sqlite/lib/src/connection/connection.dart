@@ -48,7 +48,10 @@ final class SqliteConnection implements DriftSession {
   DriftSessionWithInternalLocks? get locks => null;
 
   @override
-  Future<QueryResult> execute(StatementInfo statement) async {
+  Future<QueryResult> execute(
+    StatementInfo statement, {
+    AbortToken? abort,
+  }) async {
     final sql = statement.sql;
     if (statement.variables.isEmpty && !statement.needsResultSet) {
       // Do this because it allows running multiple statements at once
@@ -77,7 +80,10 @@ final class SqliteConnection implements DriftSession {
   }
 
   @override
-  Future<List<QueryResult>> executeBatch(StatementBatch batch) async {
+  Future<List<QueryResult>> executeBatch(
+    StatementBatch batch, {
+    AbortToken? abort,
+  }) async {
     final results = <QueryResult>[];
     final prepared = <sqlite.CommonPreparedStatement>[];
 
@@ -125,7 +131,12 @@ final class SqliteConnection implements DriftSession {
   }) {
     return DriftConnection(
       dialect: SqliteDialect.new,
-      openConnection: () async => SqliteConnection(open()),
+      openConnection: (_) async => SqliteConnection(open()),
     );
+  }
+
+  /// Returns a [DriftConnection] backed by an in-memory SQLite database.
+  static DriftConnection inMemory(sqlite.CommonSqlite3 sqlite, {String? vfs}) {
+    return synchronous(open: () => sqlite.openInMemory(vfs: vfs));
   }
 }

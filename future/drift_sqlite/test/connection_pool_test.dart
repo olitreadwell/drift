@@ -7,14 +7,45 @@ import 'dart:isolate';
 
 import 'package:async/async.dart';
 import 'package:drift3_preview/drift.dart';
+import 'package:drift3_testcases/suite/suite.dart';
+import 'package:drift_sqlite/drift_sqlite.dart';
 import 'package:drift_sqlite/native.dart';
+import 'package:sqlite3/sqlite3.dart';
+import 'package:sqlite3_connection_pool/sqlite3_connection_pool.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'connection_testcases.dart';
 
 void main() {
-  declareConnectionTests(_openPool);
+  group('without background isolates', () => _nativePoolTests(false));
+
+  group('with background isolates', () => _nativePoolTests(true));
+}
+
+var _inMemoryCounter = 0;
+
+void _nativePoolTests(bool useBackgroundIsolates) {
+  declareConnectionTests(() => _openPool(useBackgroundIsolates));
+
+  runAllTests(_ConnectionPoolTestExecutor(useBackgroundIsolates));
+
+  group('custom in-memory', () {
+    Future<OpenedDriftConnection> openInMemoryPool() async {
+      final name = 'memory:${_inMemoryCounter++}';
+      return await customConnectionPool(
+        identifier: name,
+        openPool: () async => SqliteConnectionPool.open(
+          name: name,
+          openConnections: () => PoolConnections(sqlite3.openInMemory(), []),
+        ),
+        workerIsolates: useBackgroundIsolates ? 1 : null,
+      ).open();
+    }
+
+    declareConnectionTests(openInMemoryPool);
+    runAllTests(_MemoryPoolTestExecutor(useBackgroundIsolates));
+  });
 
   test('returns new columns after recompilation', () async {
     // https://github.com/simolus3/drift/issues/2454
@@ -22,6 +53,7 @@ void main() {
     final session = (await (sqliteConnectionPool(
       file: file,
       amountOfReaders: 1,
+      useBackgroundIsolates: useBackgroundIsolates,
     ).open())).session;
     addTearDown(session.close);
 
@@ -56,6 +88,7 @@ void main() {
           isWriter ? 'writer' : 'reader',
         ]);
       },
+      useBackgroundIsolates: useBackgroundIsolates,
     ).open()).session;
     addTearDown(session.close);
 
@@ -84,6 +117,7 @@ void main() {
       sqliteConnectionPool(
         file: File(d.path('test.db')),
         configureDatabase: (db, {required bool isWriter}) => throw exception,
+        useBackgroundIsolates: useBackgroundIsolates,
       ).open(),
       throwsA(exception),
     );
@@ -91,7 +125,11 @@ void main() {
 
   test('can cancel queries', () async {
     final db = EmptyDb(
-      sqliteConnectionPool(file: File(d.path('test.db')), amountOfReaders: 1),
+      sqliteConnectionPool(
+        file: File(d.path('test.db')),
+        amountOfReaders: 1,
+        useBackgroundIsolates: useBackgroundIsolates,
+      ),
     );
 
     // Occupy the single read connection
@@ -126,6 +164,7 @@ void main() {
             file: File(path),
             amountOfReaders: 1,
             updates: mode,
+            useBackgroundIsolates: useBackgroundIsolates,
           ),
         );
         await db.customStatement('CREATE TABLE foo (bar TEXT);');
@@ -137,6 +176,7 @@ void main() {
               file: File(path),
               amountOfReaders: 1,
               updates: mode,
+              useBackgroundIsolates: useBackgroundIsolates,
             ),
           );
 
@@ -158,7 +198,74 @@ void main() {
   }
 }
 
-Future<OpenedDriftConnection> _openPool() async {
+Future<OpenedDriftConnection> _openPool(bool useBackgroundIsolates) async {
   final file = File(d.path('test.db'));
-  return sqliteConnectionPool(file: file).open();
+  return sqliteConnectionPool(
+    file: file,
+    useBackgroundIsolates: useBackgroundIsolates,
+  ).open();
+}
+
+final class _ConnectionPoolTestExecutor extends TestExecutor {
+  final bool useBackgroundIsolates;
+
+  _ConnectionPoolTestExecutor(this.useBackgroundIsolates);
+
+  @override
+  DriftConnection createConnection() {
+    return DriftConnection.withImplementation(
+      dialect: SqliteDialect.new,
+      implementation: (_) => _openPool(useBackgroundIsolates),
+    );
+  }
+
+  @override
+  Future<void> deleteData() async {}
+}
+
+final class _MemoryPoolTestExecutor extends TestExecutor {
+  final bool useBackgroundIsolate;
+
+  (String, SqliteConnectionPool)? _activeDatabase;
+
+  _MemoryPoolTestExecutor(this.useBackgroundIsolate);
+
+  @override
+  DriftConnection createConnection() {
+    if (_activeDatabase case (final identifier, _)) {
+      return customConnectionPool(
+        identifier: identifier,
+        openPool: () async => SqliteConnectionPool.open(
+          name: identifier,
+          openConnections: () => throw 'should already be open',
+        ),
+      );
+    }
+
+    final identifier = 'memory:${_inMemoryCounter++}';
+
+    return customConnectionPool(
+      identifier: identifier,
+      openPool: () async {
+        final pool = SqliteConnectionPool.open(
+          name: identifier,
+          openConnections: () => PoolConnections(sqlite3.openInMemory(), []),
+        );
+        final second = SqliteConnectionPool.open(
+          name: identifier,
+          openConnections: () => throw 'should already be open',
+        );
+
+        _activeDatabase = (identifier, second);
+        return pool;
+      },
+    );
+  }
+
+  @override
+  Future<void> deleteData() async {
+    // This makes it re-open a new in-memory database next.
+    await _activeDatabase?.$2.close();
+    _activeDatabase = null;
+  }
 }

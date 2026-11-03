@@ -1,22 +1,10 @@
-// ignore: implementation_imports
-import 'package:drift/src/drift3_preview/drift.dart';
+import 'dart:convert';
 
+import 'package:drift3_preview/drift.dart';
 import 'package:postgres/postgres.dart' as pg;
 // ignore: implementation_imports
 import 'package:postgres/src/types/text_codec.dart';
 import 'package:uuid/uuid_value.dart';
-
-/// A typed value read from a Postgres result.
-final class PostgresDatabaseValue {
-  /// The column from which this value has been read.
-  final pg.ResultSchemaColumn column;
-
-  /// The raw value, decoded by the `postgres` package.
-  final Object? value;
-
-  /// @nodoc
-  PostgresDatabaseValue({required this.column, required this.value});
-}
 
 /// The supertype of all type implementations in `drift_postgres.
 base class PhysicalPostgresType<T extends Object> extends PhysicalSqlType<T> {
@@ -43,7 +31,7 @@ base class PhysicalPostgresType<T extends Object> extends PhysicalSqlType<T> {
 
   @override
   T dartValue(Object databaseValue) {
-    return (databaseValue as PostgresDatabaseValue).value as T;
+    return databaseValue as T;
   }
 }
 
@@ -65,7 +53,8 @@ final class UuidType extends PhysicalPostgresType<UuidValue> {
 
   @override
   UuidValue dartValue(Object databaseValue) {
-    return UuidValue.fromString(databaseValue as String);
+    final asText = databaseValue as String;
+    return UuidValue.fromString(asText);
   }
 }
 
@@ -89,6 +78,26 @@ final class IntervalType extends PhysicalPostgresType<pg.Interval> {
   @override
   String sqlLiteral(pg.Interval value) {
     return "'$value'::interval";
+  }
+}
+
+/// A `json` or `jsonb` type in Postgres.
+final class JsonType extends PhysicalPostgresType<DatabaseJson> {
+  /// Creates a text-based type storing [DatabaseJson] values as JSON strings.
+  const JsonType.text() : super(pg.Type.json, 'json');
+
+  /// Creates a binary-based type storing [DatabaseJson] values as JSONB blobs.
+  const JsonType.binary() : super(pg.Type.jsonb, 'jsonb');
+
+  @override
+  String sqlLiteral(DatabaseJson value) {
+    final encoded = PhysicalPostgresType._encoder.convert(json.encode(value));
+    return '$encoded::$typeName';
+  }
+
+  @override
+  DatabaseJson dartValue(Object databaseValue) {
+    return DatabaseJson(databaseValue);
   }
 }
 
@@ -137,7 +146,7 @@ final class ArrayType<T> extends PhysicalPostgresType<List<T>> {
   String sqlLiteral(List<T> value) {
     // This gives us the `{array, initializer}` syntax, but without the
     // surrounding quotes.
-    final encoded = PhysicalPostgresType._encoder.convert(dartValue);
+    final encoded = PhysicalPostgresType._encoder.convert(value);
     final asStringLiteral = PhysicalPostgresType._encoder.convert(
       encoded,
       escapeStrings: true,
@@ -159,6 +168,14 @@ final class DartBigIntType extends PhysicalPostgresType<BigInt> {
 
   @override
   pg.TypedValue<Object> sqlParameter(BigInt? value) {
+    if (value != null && value.bitLength >= 63) {
+      throw ArgumentError.value(
+        value,
+        'value',
+        'Out of range for signed 64 bit int',
+      );
+    }
+
     return pg.TypedValue(
       postgresType,
       value?.toInt(),
