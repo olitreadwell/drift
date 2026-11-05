@@ -367,6 +367,7 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
     }
 
     _rewriteImportString(node.uri);
+    node.visitChildren(this);
   }
 
   @override
@@ -376,27 +377,15 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    // Transform usages of the pattern db.table.insertOne (and other extensions
-    // defined in on_table.dart) into db.tableQueries.insertOne.
     final target = node.target;
 
     if (node.function case SimpleIdentifier(:final name, :final element?)) {
       if (element.enclosingElement case ExtensionElement(
         name: 'TableOrViewStatements' || 'TableStatements',
       )) {
-        // This needs a rewrite, which can be automated if the receiver is a
-        // getter invocation from a database.
-        if (target
-            case PrefixedIdentifier(
-              prefix: SimpleIdentifier(:final staticType?),
-              identifier: final databaseGetter,
-            )
-            when _typeSystem.isSubtypeOf(
-              staticType,
-              _types.databaseConnectionUser,
-            )) {
-          _writer.replaceNode(databaseGetter, '${databaseGetter.name}Queries');
-        }
+        // Transform usages of the pattern db.table.insertOne (and other extensions
+        // defined in on_table.dart) into db.tableQueries.insertOne.
+        _rewriteTableToQueries(target);
       }
 
       if (element.enclosingElement == _types.tableInfo &&
@@ -409,6 +398,10 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
           '.dialect',
         );
         return;
+      }
+
+      if (element.enclosingElement == _types.queryRow && name == 'read') {
+        return _rewriteQueryRowReadCall(node);
       }
 
       if (element.enclosingElement == _types.batch &&
@@ -474,9 +467,75 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
           _removeArgument(modeArg);
         }
       }
+
+      if (_transformIdentifier(node.function, name, element) &&
+          _joinMethods.contains(name)) {
+        return _translateJoinCall(node);
+      }
     }
 
-    super.visitMethodInvocation(node);
+    node.argumentList.accept(this);
+  }
+
+  void _rewriteTableToQueries(Expression? target) {
+    if (target case SimpleIdentifier(
+      element: Element(enclosingElement: final InterfaceElement definingClass),
+    )) {
+      final staticType = _typeSystem.instantiateInterfaceToBounds(
+        element: definingClass,
+        nullabilitySuffix: NullabilitySuffix.none,
+      );
+
+      if (_typeSystem.isSubtypeOf(staticType, _types.databaseConnectionUser)) {
+        _writer.replaceNode(target, '${target.name}Queries');
+      }
+    } else if (target case PrefixedIdentifier(
+      prefix: SimpleIdentifier(:final staticType?),
+      identifier: final databaseGetter,
+    ) when _typeSystem.isSubtypeOf(staticType, _types.databaseConnectionUser)) {
+      _writer.replaceNode(databaseGetter, '${databaseGetter.name}Queries');
+    }
+  }
+
+  void _translateJoinCall(MethodInvocation node) {
+    var argumentIndex = 0;
+    for (final argument in node.argumentList.arguments) {
+      if (argument case NamedArgument(:final name, :final argumentExpression)) {
+        if (name.lexeme == 'useColumns') {
+          // useColumns is called includeInResult in drift3
+          _writer.replaceNode(name, 'includeInResult');
+        }
+
+        argumentExpression.accept(this);
+      } else {
+        if (argumentIndex == 1) {
+          // The second argument has been replaced with a named on: parameter
+          // for drift3
+          _writer.insertBefore(argument, 'on: ');
+          argument.accept(this);
+        }
+
+        argumentIndex++;
+      }
+    }
+  }
+
+  /// Rewrites `.read<int?>(...)` to `.readNullable<int>(...)`
+  void _rewriteQueryRowReadCall(MethodInvocation node) {
+    if (node.typeArgumentTypes case [final type]?
+        when _typeSystem.isNullable(type)) {
+      _writer.replaceNode(node.methodName, 'readNullable');
+
+      final nonNullable =
+          '<${_typeSystem.promoteToNonNull(type).getDisplayString()}>';
+      if (node.typeArguments case final typeArgs?) {
+        _writer.replaceNode(typeArgs, nonNullable);
+      } else {
+        _writer.insertAfter(node.methodName, nonNullable);
+      }
+    } else {
+      super.visitMethodInvocation(node);
+    }
   }
 
   void _removeArgument(Argument argument) {
@@ -629,11 +688,26 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
 
   @override
   void visitNamedType(NamedType node) {
-    _transformIdentifier(node.name, node.name.lexeme, node.element);
+    final didMigrate = _transformIdentifier(
+      node.name,
+      node.name.lexeme,
+      node.element,
+    );
+    if (didMigrate && _switchTypeParameters.contains(node.name.lexeme)) {
+      if (node.typeArguments case TypeArgumentList(
+        arguments: [final first, final second],
+      )) {
+        _writer.swap(first, second);
+
+        // We can't visit recursive types because we just changed offsets
+        return;
+      }
+    }
+
     super.visitNamedType(node);
   }
 
-  void _transformIdentifier(
+  bool _transformIdentifier(
     SyntacticEntity identifier,
     String name,
     Element? element,
@@ -646,11 +720,14 @@ final class _DartToDrift3Rewriter extends GeneralizingAstVisitor<void> {
       }
     }
 
-    if (element == null) return;
+    if (element == null) return false;
 
     if (element.readStringPragma('drift:v3-rename') case final newIdentifier?) {
       _writer.replace(identifier.offset, name.length, newIdentifier);
+      return true;
     }
+
+    return false;
   }
 }
 
@@ -733,6 +810,7 @@ final class _KnownDriftImports {
   final ClassElement insertStatement;
   final ClassElement batch;
   final MixinElement tableInfo;
+  final ClassElement queryRow;
 
   _KnownDriftImports(LibraryElement drift)
     : databaseConnectionUser =
@@ -746,7 +824,9 @@ final class _KnownDriftImports {
               as ClassElement,
       batch = drift.exportNamespace.definedNames2['Batch'] as ClassElement,
       tableInfo =
-          drift.exportNamespace.definedNames2['TableInfo'] as MixinElement;
+          drift.exportNamespace.definedNames2['TableInfo'] as MixinElement,
+      queryRow =
+          drift.exportNamespace.definedNames2['QueryRow'] as ClassElement;
 }
 
 extension on Expression {
@@ -797,3 +877,14 @@ final class _FindRequiredImports extends GeneralizingAstVisitor<void> {
     super.visitNamedType(node);
   }
 }
+
+// Types that have switched type parameters in drift3
+const _switchTypeParameters = {'TableInfo', 'SingleTableSelectStatement'};
+
+const _joinMethods = {
+  'innerJoin',
+  'leftOuterJoin',
+  'rightOuterJoin',
+  'fullOuterJoin',
+  'crossJoin',
+};

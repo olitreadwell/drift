@@ -115,7 +115,7 @@ Expression<bool> m(Expression<int> a, Expression<int> b) {
     test('migrates common apis', () async {
       final original = await _drift2Project([
         d.file('database.dart', '''
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide SimpleSelectStatement;
 
 class User {}
 class FakeUsersTable extends Table with TableInfo<FakeUsersTable, User> {}
@@ -131,6 +131,10 @@ void queryExtension(FakeGeneratedDatabase db, Uint8List a) {
   db.users.actualTableName; // not a query extension
   final x = db.users;
   x.insertOne(stub); // indirect, cannot be migrated
+}
+
+extension QueryExtensionThis on FakeGeneratedDatabase {
+  void foo() => users.insertOne(stub);
 }
 
 void rawConnection(FakeGeneratedDatabase db) async {
@@ -149,6 +153,15 @@ void insertMode(FakeGeneratedDatabase db) async {
   await db.batch((b) {
     b.insert(db.users, stub, onConflict: DoUpdate((b) => stub));
   });
+
+  innerJoin(db.users, condition);
+  crossJoin(db.users, CustomExpression('x'), useColumns: false);
+}
+
+void queryRow(QueryRow row) {
+  row.read<String>('a');
+  row.read<double?>('b');
+  int? x = row.read('c');
 }
 '''),
       ]);
@@ -156,10 +169,10 @@ void insertMode(FakeGeneratedDatabase db) async {
       await d.file('app/lib/database.dart', '''
 import 'dart:typed_data';
 import 'package:drift_sqlite/drift_sqlite.dart';
-import 'package:drift3_preview/drift.dart';
+import 'package:drift3_preview/drift.dart' hide SingleTableSelectStatement;
 
 class User {}
-class FakeUsersTable extends Table with GeneratedTable<FakeUsersTable, User> {}
+class FakeUsersTable extends Table with GeneratedTable<User, FakeUsersTable> {}
 
 base class FakeGeneratedDatabase extends GeneratedDatabase {
   FakeUsersTable get users => throw 'stub';
@@ -172,6 +185,10 @@ void queryExtension(FakeGeneratedDatabase db, Uint8List a) {
   db.users.entityName; // not a query extension
   final x = db.users;
   x.insertOne(stub); // indirect, cannot be migrated
+}
+
+extension QueryExtensionThis on FakeGeneratedDatabase {
+  void foo() => usersQueries.insertOne(stub);
 }
 
 void rawConnection(FakeGeneratedDatabase db) async {
@@ -190,6 +207,15 @@ void insertMode(FakeGeneratedDatabase db) async {
   await db.batch((b) {
     b.insert<User, FakeUsersTable>(db.users, stub, onConflict: DoUpdate((b) => stub));
   });
+
+  Join.inner(db.users, on: condition);
+  Join.cross(db.users, on: Expression.custom('x'), includeInResult: false);
+}
+
+void queryRow(CustomRow row) {
+  row.read<String>('a');
+  row.readNullable<double>('b');
+  int? x = row.readNullable<int>('c');
 }
 ''').validate();
     });
